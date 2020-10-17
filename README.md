@@ -1,4 +1,4 @@
-# CSV Importer Plugin for Linkurious Enterprise(ALPHA)
+# CSV Importer Plugin for Linkurious Enterprise (ALPHA)
 
 Feedbacks or bugs? Please, [contact me](mailto:berni@linkurio.us)
 
