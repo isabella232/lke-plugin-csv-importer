@@ -23,7 +23,7 @@ The information of nodes and edges need to be stored in a *comma separated file*
 property_1,property_2,...,property_n
 ```
 
-where `property_x` can be:
+where `property_x` is:
 - a `number`: an integer or a float (`.` must be used as decimal separator);
 - a `string`: they can be defined with or without `"` (or `'`) delimiters;
 - a `date` (or `datetime`);
