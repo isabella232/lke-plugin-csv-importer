@@ -47,7 +47,7 @@ Ginevra,Spacey,87,"AU"
 ### 2.1 Setting the Plugin
 NOTE: for this part you need admin rights.
 
-1. Download the `csv-importer-plugin` plugin available [here](https://github.com/Linkurious/csv-importer-plugin).
+1. Download the `importer.lke` plugin available [here](https://github.com/Linkurious/lke-plugin-csv-importer/releases/tag/v1.0.0).
 
 2. Copy the `.lke` archive in the folder `<lke-server>/data/plugins`
 
