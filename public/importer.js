@@ -31,7 +31,6 @@ function readFile(){
         startWaiting();
         let fr = new FileReader();
         fr.onload = function(event){
-            //spinner.stop();
             stopWaiting();
             rows = event.target.result.split(/\r?\n|\r/);
             withHeaders = document.getElementById("withHeaders").checked;
@@ -74,11 +73,9 @@ function addNode(){
     node.insertAdjacentElement("afterend", document.createElement("br"));
 
     fillProperties(node);
-    //addProperty(node); 
 }
 
 function addEdge(){
-    //alert("WIP");
     let edges = document.getElementById("edges");
     let ec = parseInt(edges.getAttribute("edgecounter")) + 1;
     edges.setAttribute("edgecounter", ec);
@@ -105,15 +102,6 @@ function addEdge(){
 
     edgeCounter++;
     
-    //let after = document.createElement("br");
-    //insertAfter(after, node)
-
-    //document.getElementById("edges").appendChild(edge);
-
-    //edge.insertAdjacentElement("afterend", document.createElement("br"));
-    //edge.insertAdjacentElement("afterend", document.createElement("br"));
-
-    //addEdgeProperty(edge); 
     addFromNode(edge);
     addToNode(edge);
 }
@@ -182,7 +170,6 @@ function addProperty(node){
     property.innerHTML = propertyHTML;
 
     let deletePropertyButton = property.getElementsByClassName("removepropertybutton")[0];
-    //deletePropertyButton.id = "test";
     deletePropertyButton.id = "removepropertybutton-" + property.id.split("-")[1];
 
     let select = property.getElementsByClassName("headers")[0];
@@ -223,7 +210,6 @@ function addEdgeProperty(edge){
     property.innerHTML = edgePropertyHTML;
 
     let deleteEdgePropertyButton = property.getElementsByClassName("removeedgepropertybutton")[0];
-    //deletePropertyButton.id = "test";
     deleteEdgePropertyButton.id = "removeedgepropertybutton-" + property.id.split("-")[1];
 
     let select = property.getElementsByClassName("headers")[0];
@@ -245,9 +231,7 @@ function addEdgeProperty(edge){
             select.appendChild(el);
         }
     }
-    
-    //properties.appendChild(property);
-    edge.appendChild(property);
+        edge.appendChild(property);
 }
 
 function addIdentifier(node){
@@ -263,13 +247,11 @@ function addIdentifier(node){
     identifier.id = node.id + "." + pc;   
     identifier.innerHTML = identifierHTML;
     let deleteIdentifierButton = identifier.getElementsByClassName("removeidentifierbutton")[0];
-    //deletePropertyButton.id = "test";
     if (identifier.id.startsWith("from")){
         deleteIdentifierButton.id = "removefromidentifierbutton-" + identifier.id.split("-")[1];
     } else {
         deleteIdentifierButton.id = "removetoidentifierbutton-" + identifier.id.split("-")[1];
     }
-    //deleteIdentifierButton.id = "removeidentifierbutton-" + identifier.id.split("-")[1];
 
     let select = identifier.getElementsByClassName("headers")[0];
     if(withHeaders == "true"){
@@ -299,7 +281,6 @@ async function execute(){
 
     if(check == true){
         startWaiting();
-        // startLoading();
         try{
             let queryTemplates = createNodeQuery().concat(createEdgeQuery());
             let csv = JSON.parse(sessionStorage.getItem("rows"));
@@ -309,7 +290,6 @@ async function execute(){
             let len = queries.length;
             for (i in queries){
               let info = `Running query n. ${parseInt(i) + 1} of ${len}`
-              //console.log(queries[i]);
               await runQuery(queries[i], info);
             }
             stopWaitingNextStep();
@@ -323,10 +303,9 @@ async function execute(){
 }
 
 function createNodeQuery(){
-    //TODO: checks necessary
     let queries = [];
 
-    let nodes = document.getElementsByClassName("nodeClass"); //all the nodes
+    let nodes = document.getElementsByClassName("nodeClass");
     for(let n = 0; n < nodes.length; n++){
         let node = nodes[n];
         let properties = node.getElementsByClassName("propertyClass");
@@ -345,7 +324,7 @@ function createNodeQuery(){
 function createEdgeQuery(){
     let queries = [];
 
-    let tables = document.getElementsByClassName("edgetable"); //all the edges
+    let tables = document.getElementsByClassName("edgetable");
     console.log(tables.length);
     for (let e = 0; e<tables.length; e++){
         let table = tables[e];
@@ -354,7 +333,6 @@ function createEdgeQuery(){
         let edge = table.getElementsByClassName("edgename")[0];
         let toNode = table.getElementsByClassName("toname")[0];
 
-        //FROM
         let fromIdentifiers = fromNode.getElementsByClassName("identifierClass");
         let fromQuery = "MATCH (f:" + fromNode.getElementsByClassName("label")[0].value + ") ";
         for(let p = 0; p < fromIdentifiers.length; p++){
@@ -368,7 +346,6 @@ function createEdgeQuery(){
             fromQuery += identifier.getElementsByClassName("identifier")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
          
-        //EDGE
         let properties = edge.getElementsByClassName("propertyClass");
         let edgeQuery = "MERGE (f)-[e:" + edge.getElementsByClassName("label")[0].value + "]->(t) ";
         console.log("properties: " + properties.length);
@@ -378,7 +355,6 @@ function createEdgeQuery(){
             edgeQuery += "SET e." + property.getElementsByClassName("edgeproperty")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
 
-        //TO
         let toIdenfiers = toNode.getElementsByClassName("identifierClass");
         let toQuery = "MATCH (t:" + toNode.getElementsByClassName("label")[0].value + ") ";
         for(let p = 0; p < toIdenfiers.length; p++){
@@ -403,7 +379,6 @@ function createEdgeQuery(){
 
 
 function createQueries(queryTemplates, csv, header){
-    //header available
     let res = [];
     if (header != null){
         for (let l = 0; l < csv.length; l++){
@@ -424,7 +399,6 @@ function createQueries(queryTemplates, csv, header){
                 }
                 console.log(qt);
                 res.push(qt);
-                //(qt);
             }
         }
     }
@@ -509,7 +483,6 @@ function startLoading(){
     overlay.innerHTML = "<div class=\"opacity\"></div><div class=\"highlight\"></div>"
     document.body.appendChild(overlay);
     let loadingBar = new ldBar(document.getElementsByClassName("highlight")[0]);
-    // spinner.spin(document.getElementsByClassName("highlight")[0]);
     loadingBar.set(60);
 }
 
@@ -564,14 +537,11 @@ function fillProperties(node){
         property.innerHTML = propertyHTML;
 
         let deletePropertyButton = property.getElementsByClassName("removepropertybutton")[0];
-        //deletePropertyButton.id = "test";
         deletePropertyButton.id = "removepropertybutton-" + property.id.split("-")[1];
-
         let select = property.getElementsByClassName("headers")[0];
         if(withHeaders == "true"){
-            //headers = headers.split(",");
             for(let i in headers){
-                let opt = headers[i]
+                let opt = headers[i];
                 let el = document.createElement("option");
                 el.textContent = opt;
                 el.value = i;
@@ -595,7 +565,6 @@ function fillProperties(node){
 }
 
 function checkInput(){
-    //checking textfields
     let textFields = true;
     let inputs = document.getElementsByTagName("input");
     for (let i=0; i<inputs.length; i++){
@@ -606,9 +575,8 @@ function checkInput(){
             inputs[i].style.border ="";
         }
     }
-    //checking relationship ids
     let relIds = true;
-    let tables = document.getElementsByClassName("edgetable"); //all the edges
+    let tables = document.getElementsByClassName("edgetable");
     for (let i=0; i<tables.length; i++){
         let fromid = tables[i].getElementsByClassName("fromname")[0].getElementsByClassName("identifierClass")[0].getElementsByTagName("select")[0];
         let toid = tables[i].getElementsByClassName("toname")[0].getElementsByClassName("identifierClass")[0].getElementsByTagName("select")[0];
@@ -621,8 +589,6 @@ function checkInput(){
             toid.style.border = "";
         }
     }
-
-    //return
     if (textFields && relIds){
         return true;
     } else {

@@ -1,6 +1,6 @@
 # CSV Importer Plugin for Linkurious Enterprise (ALPHA)
 
-Feedbacks or bugs? Please, [contact me](mailto:berni@linkurio.us)
+Feedbacks or bugs? Please, [contact me](mailto:support@linkurio.us)
 
 ### Prerequisites:
 - a  Linkurious Enterprise 2.9.x server
