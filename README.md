@@ -1,6 +1,6 @@
 # CSV Importer Plugin for Linkurious Enterprise (ALPHA)
 
-Feedbacks or bugs? Please, [contact me](mailto:support@linkurio.us)
+Feedbacks or bugs? Please, [contact us](mailto:support@linkurio.us)
 
 ### Prerequisites:
 - a  Linkurious Enterprise 2.9.x server
@@ -14,7 +14,7 @@ Feedbacks or bugs? Please, [contact me](mailto:support@linkurio.us)
 
 3. [How to import data](#3-how-to-import-data)
 
-4. [Sample files] (#4-sample-files)
+4. [Sample files](#4-sample-files)
 
 ## 1. Introduction
 With this plugin, we want to provide an easy tool for importing data into your datasource, even if you're not a cypher query language expert: no knowledge is required.
