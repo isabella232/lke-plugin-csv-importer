@@ -14,6 +14,8 @@ Feedbacks or bugs? Please, [contact me](mailto:support@linkurio.us)
 
 3. [How to import data](#3-how-to-import-data)
 
+4. [Sample files] (#4-sample-files)
+
 ## 1. Introduction
 With this plugin, we want to provide an easy tool for importing data into your datasource, even if you're not a cypher query language expert: no knowledge is required.
 
@@ -121,3 +123,10 @@ NOTE: it's possible to add multiple nodes categories and edges types at the same
 
 12. Done!
 
+## 4. Sample files
+
+Two sample CSV files are available [here](https://github.com/Linkurious/lke-plugin-csv-importer/tree/master/sample%20csv):
+- `person.csv` contains information about person entities (a *node*);
+- `ping.csv` contains information about relationships between two person nodes (a *relationship*).
+
+All the information contained in these files has been created with [Mockaroo](http://mockaroo.com/): an online tool for creating random and mock datasets.
