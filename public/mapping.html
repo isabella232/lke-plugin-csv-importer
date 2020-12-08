@@ -13,12 +13,20 @@
         <title>CSV Import</title>
     </head>
     <body>
-        <h1>CSV importer: map your columns</h1>
-        <button id="nodebutton" onclick="addNode()">Add a Node</button><br>
-        <div id="nodes" nodecounter=0></div>
-        <br>
-        <button id="edgebutton" onclick="addEdge()">Add an Edge</button><br>
-        <div id="edges" edgecounter=0></div>
-        <br><br><br><button id="runbutton" onclick="execute()">Run</button><br>
+        <div class="homeContainer">
+            <div class="header">
+                <div class="title">CSV Import Plugin: Column Mapping</div>
+            </div>
+            <div class="content">
+                <button class="secondaryButton" id="nodebutton" onclick="addNode()">Add node</button><br/><br/>
+                <div id="nodes" nodecounter=0></div>
+                <button class="secondaryButton" id="edgebutton" onclick="addEdge()">Add edge</button><br/><br/>
+                <div id="edges" edgecounter=0></div>
+            </div>
+            <div class="actionGroup">
+                <button class="primaryButton" id="runbutton" onclick="execute()">Run</button>
+            </div>
+        </div>
+        
     </body>
 </html> 
