@@ -5,10 +5,11 @@ let input;
 let nodeCounter;
 let edgeCounter;
 let spinner = new Spinner();
+let properties = [];
 
-const nodeHTML = "<label for=\"label\">Set a label:</label>\n<input type=\"text\" class=\"label\" placeholder=\"label\"><button class=\"propertybutton\" onclick=\"propertyButton(this.id)\">Add a Property</button><button class=\"removenodebutton\" onclick=\"removeNode(this.id)\">Remove Node</button>";
+const nodeHTML = "<label for=\"label\">Set a label:</label>\n<input type=\"hidden\" class=\"label\" placeholder=\"label\"><select onchange=\"createNewCategory(this.id)\" class=\"headers\"><option value='' disabled selected>Select a category</option><option value='##category##' \">Create new Category</option></select><button class=\"propertybutton\" onclick=\"propertyButton(this.id)\">Add a Property</button><button class=\"removenodebutton\" onclick=\"removeNode(this.id)\">Remove Node</button>";
 const fromNodeHTML = "<label for=\"label\">Select a label:</label>\n<input type=\"text\" class=\"label\" placeholder=\"label\"><button class=\"identifierbutton\" onclick=\"identifierButton(this.id)\">Add an identifier</button>";
-const propertyHTML = "<label for=\"headers\"><br>Map a property: </label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"text\" class=\"property\" placeholder=\"property name\"></input><button class=\"removepropertybutton\" onclick=\"removeProperty(this.id)\">Remove Property</button>";
+const propertyHTML = "<label for=\"headers\"><br>Map a property: </label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"property\" placeholder=\"property name\"><select onchange=\"createNewProperty(this.id)\" class=\"headers\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removepropertybutton\" onclick=\"removeProperty(this.id)\">Remove Property</button>";
 const edgeHTML = "<label for=\"label\">Set a label:</label>\n<input type=\"text\" class=\"label\" placeholder=\"label\"><button class=\"edgepropertybutton\" onclick=\"edgePropertyButton(this.id)\">Add a Property</button><button class=\"removeedgebutton\" onclick=\"removeEdge(this.id)\">Remove Edge</button><br>";
 const edgeTableHTML = "<table><thead><th>Source node</th><th>Edge</th><th>Destination node</th></thead><tbody><tr><td class=\"fromname\"></td><td class=\"edgename\"></td><td class=\"toname\"></td></tr></tbody></table><br>"
 const edgePropertyHTML = "<label for=\"headers\"><br>Map a property: </label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"text\" class=\"edgeproperty\" placeholder=\"property name\"></input><button class=\"removeedgepropertybutton\" onclick=\"removeEdgeProperty(this.id)\">Remove Property</button><br>";
@@ -49,7 +50,9 @@ function readFile(){
     }
 }
 
-function addNode(){    
+function addNode(){   
+    // TODO: to be replaced by API call 
+    const nodeCategories = ['Person', 'Car'];
     let nodes = document.getElementById("nodes");
     let nc = parseInt(nodes.getAttribute("nodecounter")) + 1;
     nodes.setAttribute("nodecounter", nc)
@@ -62,6 +65,10 @@ function addNode(){
     let button = node.getElementsByClassName("propertybutton")[0];
     button.id = "button-" + nc;
 
+    let select = node.getElementsByClassName("headers")[0];
+    select.id = "select-" + nc;
+    fillOptionsNode(select, nodeCategories);
+
     let deleteButton = node.getElementsByClassName("removenodebutton")[0];
     deleteButton.id = "deletenodebutton-" + nc;
 
@@ -71,8 +78,47 @@ function addNode(){
 
     node.insertAdjacentElement("afterend", document.createElement("br"));
     node.insertAdjacentElement("afterend", document.createElement("br"));
+}
 
+/**
+ * Provided a select element and a list of string it builds the html options
+ */
+function fillOptionsNode(select, categories) {
+    categories.forEach((category) => {
+        var opt = document.createElement('option');
+        opt.value = category;
+        opt.innerHTML = category;
+        select.insertBefore(opt, select.lastChild);
+    });
+}
+
+/**
+ * Make the category select disappear and replace it with a text input
+ */
+function createNewCategory(id) {
+    const node = document.getElementById("node-" + id.split("-")[1]);
+    const select = node.getElementsByClassName("headers")[0];
+    if (select.value === '##category##') {
+        select.remove();
+        const input = node.getElementsByClassName("label")[0];
+        input.type = 'text';
+    } else if (select.value) {
+        properties = ['uid', 'first_name'];
+    }
     fillProperties(node);
+}
+
+/**
+ * Make the property select disapper and replace it with a text input
+ */
+function createNewProperty(id) {
+    const node = document.getElementById("node-" + id.split("-")[1]);
+    const select = node.getElementsByClassName("headers")[1];
+    if (select.value === '##property##') {
+        select.remove();
+        const input = node.getElementsByClassName("property")[0];
+        input.type = 'text';
+    }
 }
 
 function addEdge(){
@@ -524,6 +570,12 @@ function indexDatasource(){
 }
 
 function fillProperties(node){
+    // Delete the div in case it was already created before
+    const existingProperties = node.getElementsByClassName("propertyClass");
+    for (var i = existingProperties.length - 1; i >= 0; i--) {
+        existingProperties[0].parentNode.removeChild(existingProperties[0]);
+    }
+
     headers = sessionStorage.getItem("headers");
     withHeaders = sessionStorage.getItem("withHeaders");
     headers = headers.split(",");
@@ -557,11 +609,32 @@ function fillProperties(node){
             }
         }
         select.selectedIndex = h;
-        let text = property.getElementsByClassName("property")[0];
-        text.value = headers[h]
+        let selectProperty = property.getElementsByClassName("headers")[1];
+        selectProperty.id = "select-" + property.id.split("-")[1];
+        fillOptionsNode(selectProperty, properties);
+        // auto select properties with same name than column
+        if (withHeaders) {
+            const indexHeader = findIndexHeader(selectProperty.options, headers[h]);
+            if (indexHeader !== -1) {
+                selectProperty.selectedIndex = indexHeader;
+            } 
+        }
     
         node.appendChild(property);
+    }
+}
+
+/**
+ * Find the index of the option that matches the column name
+ * If none matches, return -1
+ */
+function findIndexHeader(items, header) {
+    for (let i = 0; i < items.length; i++) {
+        if (header === items[i].innerText) {
+            return i;
         }
+    }
+    return -1;
 }
 
 function checkInput(){
