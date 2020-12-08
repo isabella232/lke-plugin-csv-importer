@@ -26,7 +26,7 @@ function readFile(){
 
     input = document.getElementById("importFile").files[0];
     if(!input || !input.name.endsWith(".csv")){
-        document.getElementById("fileError").innerHTML = "Select a valid file! ";
+        document.getElementById("fileError").innerHTML = "Select a valid file ";
     } else{
         startWaiting();
         let fr = new FileReader();
