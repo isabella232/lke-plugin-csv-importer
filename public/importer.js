@@ -8,13 +8,13 @@ let spinner = new Spinner();
 let properties = [];
 
 const nodeHTML = "<div class=\"nodeContainer\"><div class=\"labelContainer\"><div><label for=\"label\">Label</label><input type=\"hidden\" class=\"label\" placeholder=\"Type a new label\"><select onchange=\"createNewCategory(this.id)\" class=\"headers\"><option value='' disabled selected>Select a category</option><option value='##category##' \">Create new Category</option></select></div><button class=\"removenodebutton secondaryButton\" onclick=\"removeNode(this.id)\">Remove node</button></div><div class=\"propertyContainer\"><div>Properties</div><button class=\"propertybutton quietButton\" onclick=\"propertyButton(this.id)\">Add property</button></div></div>";
-const fromNodeHTML = "<label for=\"label\">Select a label:</label>\n<input type=\"text\" class=\"label\" placeholder=\"label\"><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button>";
+const fromNodeHTML = "<label for=\"label\">Label </label>\n<input type=\"text\" class=\"label\" placeholder=\"label\"><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button>";
 const propertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"property\" placeholder=\"Property name\"><select onchange=\"createNewProperty(this.id)\" class=\"headers\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removepropertybutton secondaryButton\" onclick=\"removeProperty(this.id)\">Remove property</button>";
 const edgeHTML = "<label for=\"label\">Label </label>\n<input type=\"text\" class=\"label\" placeholder=\"Label\"><button class=\"edgepropertybutton quietButton\" onclick=\"edgePropertyButton(this.id)\">Add property</button><button class=\"removeedgebutton secondaryButton\" onclick=\"removeEdge(this.id)\">Remove edge</button><br>";
 const edgeTableHTML = "<table><thead><th>Source node</th><th>Edge</th><th>Destination node</th></thead><tbody><tr><td class=\"fromname\"></td><td class=\"edgename\"></td><td class=\"toname\"></td></tr></tbody></table><br>"
-const edgePropertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"text\" class=\"edgeproperty\" placeholder=\"Property name\"></input><button class=\"removeedgepropertybutton secondaryButton\" onclick=\"removeEdgeProperty(this.id)\">Remove Property</button><br>";
-const identifierHTML = "<label for=\"property\"><br>Select an idenfitier: </label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"text\" class=\"identifier\" placeholder=\"Property name\"></input><button class=\"removeidentifierbutton secondaryButton\" onclick=\"removeIdentifier(this.id)\">Remove identifier</button>";
-const nextstepHTML = "<p class=\"popupTitle\">The file has been successfully imported</p><button class=\"newcsvbutton quietButton\" onclick=\"newCSVButton()\">Upload another file</button><button class=\"indexdatasource primaryButton\" onclick=\"indexDatasource()\">Index datasource</button>"
+const edgePropertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"text\" class=\"edgeproperty\" placeholder=\"Property name\"></input><button class=\"removeedgepropertybutton secondaryButton\" onclick=\"removeEdgeProperty(this.id)\">Remove Property</button>";
+const identifierHTML = "<label for=\"property\"><br>Idenfitier </label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"text\" class=\"identifier\" placeholder=\"Property name\"></input><button class=\"removeidentifierbutton secondaryButton\" onclick=\"removeIdentifier(this.id)\">Remove identifier</button>";
+const nextstepHTML = "<p class=\"popupTitle\">The file has been successfully imported</p><a href='' class=\"quietButton\">Go to Linkurious</a><button class=\"newcsvbutton primaryButton\" onclick=\"newCSVButton()\">Upload another file</button>"
 
 const basePathRegex = /(?<basePath>.*)\/plugins\/(?<pluginPath>.*?)(\/|$)/;
 const basePath = basePathRegex.exec(window.location.pathname)?.groups.basePath || '';
@@ -550,24 +550,6 @@ function newCSVButton(){
     window.location = serverURL + "plugins/" + pluginPath + "/index.html?sourceKey=" + sessionStorage.getItem("sourceKey");
 }
 
-function indexDatasource(){
-    let request = new XMLHttpRequest();
-    request.open("GET", serverURL + 'api/admin/sources');
-    request.setRequestHeader("Content-Type", "application/json; charset=utf-8");
-    request.send();
-
-    request.onload = () => {
-        let res = JSON.parse(request.response);
-        let configIndex = res.filter(s => s.key == sessionStorage.getItem("sourceKey"))[0].configIndex;
-        sessionStorage.removeItem("rows");
-        sessionStorage.removeItem("headers");
-        sessionStorage.removeItem("withHeaders");
-        sessionStorage.removeItem("sourceKey");
-        window.location = serverURL + "admin/data?sourceIndex=" + configIndex;
-
-    }
-}
-
 function fillProperties(node){
     // Delete the div in case it was already created before
     const existingProperties = node.getElementsByClassName("propertyClass");
@@ -641,7 +623,7 @@ function checkInput(){
     let inputs = document.getElementsByTagName("input");
     for (let i=0; i<inputs.length; i++){
         if (inputs[i].value === ""){
-            inputs[i].style.border ="2px solid red";
+            inputs[i].style.border ="2px solid #EC5B62";
             textFields = false;
         } else {
             inputs[i].style.border ="";
@@ -653,8 +635,8 @@ function checkInput(){
         let fromid = tables[i].getElementsByClassName("fromname")[0].getElementsByClassName("identifierClass")[0].getElementsByTagName("select")[0];
         let toid = tables[i].getElementsByClassName("toname")[0].getElementsByClassName("identifierClass")[0].getElementsByTagName("select")[0];
         if (fromid.value == toid.value){
-            fromid.style.border = "2px solid red";
-            toid.style.border = "2px solid red";
+            fromid.style.border = "2px solid #EC5B62";
+            toid.style.border = "2px solid #EC5B62";
             relIds = false;
         } else {
             fromid.style.border = "";
@@ -664,9 +646,9 @@ function checkInput(){
     if (textFields && relIds){
         return true;
     } else {
-        let error = "Please, correct the following errors:";
-        if(!textFields){ error = error + "\n → fill all the text fields;"; }
-        if(!relIds){ error = error + "\n → idenfier for the edges should use different columns;"; }
+        let error = "The following needs corrected:";
+        if(!textFields){ error = error + "\n → Fill all the text fields"; }
+        if(!relIds){ error = error + "\n → Identifier for the edges should use different columns"; }
         return error;
     }
 }
