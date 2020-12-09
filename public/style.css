@@ -48,7 +48,7 @@ a {
 
 	.label {
 		margin: 0 16px 0 8px;
-		height: 18px;
+		height: 100%;
 	}
 
 	.fileLabel {

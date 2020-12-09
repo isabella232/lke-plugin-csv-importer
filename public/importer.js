@@ -6,14 +6,17 @@ let nodeCounter;
 let edgeCounter;
 let spinner = new Spinner();
 let properties = [];
+let edgeProperties = [];
+let propertiesFrom = [];
+let propertiesTo = [];
 
-const nodeHTML = "<div class=\"nodeContainer\"><div class=\"labelContainer\"><div><label for=\"label\">Label</label><input type=\"hidden\" class=\"label\" placeholder=\"Type a new label\"><select onchange=\"createNewCategory(this.id)\" class=\"headers\"><option value='' disabled selected>Select a category</option><option value='##category##' \">Create new Category</option></select></div><button class=\"removenodebutton secondaryButton\" onclick=\"removeNode(this.id)\">Remove node</button></div><div class=\"propertyContainer\"><div>Properties</div><button class=\"propertybutton quietButton\" onclick=\"propertyButton(this.id)\">Add property</button></div></div>";
-const fromNodeHTML = "<label for=\"label\">Label </label>\n<input type=\"text\" class=\"label\" placeholder=\"label\"><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button>";
-const propertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"property\" placeholder=\"Property name\"><select onchange=\"createNewProperty(this.id)\" class=\"headers\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removepropertybutton secondaryButton\" onclick=\"removeProperty(this.id)\">Remove property</button>";
-const edgeHTML = "<label for=\"label\">Label </label>\n<input type=\"text\" class=\"label\" placeholder=\"Label\"><button class=\"edgepropertybutton quietButton\" onclick=\"edgePropertyButton(this.id)\">Add property</button><button class=\"removeedgebutton secondaryButton\" onclick=\"removeEdge(this.id)\">Remove edge</button><br>";
+const nodeHTML = "<div class=\"nodeContainer\"><div class=\"labelContainer\"><div><label for=\"label\">Label</label><input type=\"hidden\" class=\"label\" placeholder=\"Type a new label\"><select onchange=\"createNewCategory(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option><option value='##category##' \">Create new category</option></select></div><button class=\"removenodebutton secondaryButton\" onclick=\"removeNode(this.id)\">Remove node</button></div><div class=\"propertyContainer\"><div>Properties</div><button class=\"propertybutton quietButton\" onclick=\"propertyButton(this.id)\">Add property</button></div></div>";
+const fromNodeHTML = "<label for=\"label\">Label </label>\n<select onchange=\"onNodeSelect(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option></select><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button>";
+const propertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"property\" placeholder=\"Property name\"><select onchange=\"createNewProperty(this.id)\" class=\"property_select label\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removepropertybutton secondaryButton\" onclick=\"removeProperty(this.id)\">Remove property</button>";
+const edgeHTML = "<label for=\"label\">Label </label>\n<input type=\"hidden\" class=\"label\" placeholder=\"label\"><select onchange=\"onEdgeSelected(this.id)\" class=\"edge_select label\"><option value='' disabled selected>Select a type</option><option value='##type##' \">Create new type</option></select><button class=\"edgepropertybutton quietButton\" onclick=\"edgePropertyButton(this.id)\">Add property</button><button class=\"removeedgebutton secondaryButton\" onclick=\"removeEdge(this.id)\">Remove edge</button><br>";
 const edgeTableHTML = "<table><thead><th>Source node</th><th>Edge</th><th>Destination node</th></thead><tbody><tr><td class=\"fromname\"></td><td class=\"edgename\"></td><td class=\"toname\"></td></tr></tbody></table><br>"
-const edgePropertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"text\" class=\"edgeproperty\" placeholder=\"Property name\"></input><button class=\"removeedgepropertybutton secondaryButton\" onclick=\"removeEdgeProperty(this.id)\">Remove Property</button>";
-const identifierHTML = "<label for=\"property\"><br>Idenfitier </label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"text\" class=\"identifier\" placeholder=\"Property name\"></input><button class=\"removeidentifierbutton secondaryButton\" onclick=\"removeIdentifier(this.id)\">Remove identifier</button>";
+const edgePropertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"edgeproperty\" placeholder=\"property name\"><select onchange=\"createNewPropertyEdge(this.id)\" class=\"property_select label\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removeedgepropertybutton secondaryButton\" onclick=\"removeEdgeProperty(this.id)\">Remove Property</button>";
+const identifierHTML = "<label for=\"property\"><br>Idenfitier </label><select class=\"headers\"></select><label for=\"property\"> → </label><select class=\"property_select\"><option value='' disabled selected>Select a property</option></select><button class=\"removeidentifierbutton secondaryButton\" onclick=\"removeIdentifier(this.id)\">Remove identifier</button>";
 const nextstepHTML = "<p class=\"popupTitle\">The file has been successfully imported</p><a href='' class=\"quietButton\">Go to Linkurious</a><button class=\"newcsvbutton primaryButton\" onclick=\"newCSVButton()\">Upload another file</button>"
 
 const basePathRegex = /(?<basePath>.*)\/plugins\/(?<pluginPath>.*?)(\/|$)/;
@@ -65,7 +68,7 @@ function addNode(){
     let button = node.getElementsByClassName("propertybutton")[0];
     button.id = "button-" + nc;
 
-    let select = node.getElementsByClassName("headers")[0];
+    let select = node.getElementsByClassName("node_select")[0];
     select.id = "select-" + nc;
     fillOptionsNode(select, nodeCategories);
 
@@ -96,11 +99,12 @@ function fillOptionsNode(select, categories) {
  */
 function createNewCategory(id) {
     const node = document.getElementById("node-" + id.split("-")[1]);
-    const select = node.getElementsByClassName("headers")[0];
+    const select = node.getElementsByClassName("node_select")[0];
     if (select.value === '##category##') {
         select.remove();
         const input = node.getElementsByClassName("label")[0];
         input.type = 'text';
+        properties = [];
     } else if (select.value) {
         properties = ['uid', 'first_name'];
     }
@@ -108,14 +112,44 @@ function createNewCategory(id) {
 }
 
 /**
+ * When an edge type is selected
+ */
+function onEdgeSelected(id) {
+    const edge = document.getElementById("edge-" + id.split("-")[1]);
+    const select = edge.getElementsByClassName("edge_select")[0];
+    if (select.value === '##type##') {
+        select.remove();
+        const input = edge.getElementsByClassName("label")[0];
+        input.type = 'text';
+        edgeProperties = [];
+    } else {
+        edgeProperties = ['uid', 'edge_property1'];
+    }
+    deleteAllEdgeProperties(id);
+}
+
+/**
  * Make the property select disapper and replace it with a text input
  */
 function createNewProperty(id) {
     const node = document.getElementById("node-" + id.split("-")[1]);
-    const select = node.getElementsByClassName("headers")[1];
+    const select = node.getElementsByClassName("property_select")[0];
     if (select.value === '##property##') {
         select.remove();
         const input = node.getElementsByClassName("property")[0];
+        input.type = 'text';
+    }
+}
+
+/**
+ * Make the property select disapper and replace it with a text input
+ */
+function createNewPropertyEdge(id) {
+    const node = document.getElementById("edge-" + id.split("-")[1]);
+    const select = node.getElementsByClassName("property_select")[0];
+    if (select.value === '##property##') {
+        select.remove();
+        const input = node.getElementsByClassName("edgeproperty")[0];
         input.type = 'text';
     }
 }
@@ -125,7 +159,7 @@ function addEdge(){
     let ec = parseInt(edges.getAttribute("edgecounter")) + 1;
     edges.setAttribute("edgecounter", ec);
 
-    let table = document.createElement("table");
+    let table = document.createElement("div");
     table.className = "edgetable";
     table.innerHTML = edgeTableHTML;
     edges.appendChild(table);
@@ -135,6 +169,12 @@ function addEdge(){
     edge.setAttribute("propertycounter", 0);
     edge.id = "edge-" + ec;
     edge.innerHTML = edgeHTML;
+
+    let select = edge.getElementsByClassName("edge_select")[0];
+    select.id = "typeselect-" + ec;
+    // TODO: replace by call to api
+    const edgeTypeAPI = ['type_1', 'type_2'];
+    fillOptionsNode(select, edgeTypeAPI);
 
     let edgename = table.getElementsByClassName("edgename")[0];
     edgename.appendChild(edge);
@@ -152,6 +192,8 @@ function addEdge(){
 }
 
 function addFromNode(edge){
+    // TODO: to be replaced by API call 
+    const nodeCategories = ['Person', 'Car'];
     let nc = edge.getAttribute("id").split("-")[1]
     let fromNode = document.createElement("div");
     edge.className = "fromNode"
@@ -164,9 +206,22 @@ function addFromNode(edge){
     let button = fromNode.getElementsByClassName("identifierbutton")[0];
     button.id = "frombutton-" + nc;
     addIdentifier(fromNode);
+
+    // Merge node category from last step + existing database
+    let select = fromNode.getElementsByClassName("node_select")[0];
+    select.id = "fromselect-" + nc;
+    const nodesData = getNodesData();
+    const allCategories = nodeCategories.concat(
+        nodesData
+            .map(node => node.name)
+            .filter((category) => nodeCategories.indexOf(category) < 0)
+    )
+    fillOptionsNode(select, allCategories);
 }
 
 function addToNode(edge){
+    // TODO: to be replaced by API call 
+    const nodeCategories = ['Person', 'Car'];
     let nc = edge.getAttribute("id").split("-")[1]
     let toNode = document.createElement("div");
     edge.className = "toNode"
@@ -179,7 +234,52 @@ function addToNode(edge){
     let button = toNode.getElementsByClassName("identifierbutton")[0];
     button.id = "tobutton-" + nc;
     addIdentifier(toNode);
+
+    // Merge node category from last step + existing database
+    let select = toNode.getElementsByClassName("node_select")[0];
+    select.id = "toselect-" + nc;
+    const nodesData = getNodesData();
+    const allCategories = nodeCategories.concat(
+        nodesData
+            .map(node => node.name)
+            .filter((category) => nodeCategories.indexOf(category) < 0)
+    )
+    fillOptionsNode(select, allCategories);
 }
+
+/**
+ * When a node catgeory is selected (source or destination node)
+ */
+function onNodeSelect(id) {
+    const select = document.getElementById(id);
+    const nodesData = getNodesData();
+    selectedCategory = nodesData.filter(node => node.name === select.value);
+    const propertiesAPI = ['uid', 'first_name'];
+    let newProperties = [];
+    if (selectedCategory.length) {
+        newProperties = selectedCategory[0].properties;
+    }
+    const allProperties = propertiesAPI.concat(
+        newProperties
+            .filter((property) => property && propertiesAPI.indexOf(property) < 0)
+    )
+    let node;
+    if (id.startsWith("from")){
+        node = document.getElementById("fromNode-" + id.split("-")[1]);
+        
+        propertiesFrom = allProperties;
+    } else {
+        node = document.getElementById("toNode-" + id.split("-")[1]);
+        propertiesTo = allProperties;
+    }
+    const existingProperties = node.getElementsByClassName("identifierClass");
+    for (var i = existingProperties.length - 1; i >= 0; i--) {
+        existingProperties[0].parentNode.removeChild(existingProperties[0]);
+    }
+    addIdentifier(node);
+}
+
+
 
 function propertyButton(id){
     let node = document.getElementById("node-" + id.split("-")[1]);
@@ -189,6 +289,17 @@ function propertyButton(id){
 function edgePropertyButton(id){
     let edge = document.getElementById("edge-" + id.split("-")[1]);
     addEdgeProperty(edge);
+}
+
+/**
+ * Delete edge properties when edge type is changed
+ */
+function deleteAllEdgeProperties(id){
+    let edge = document.getElementById("edge-" + id.split("-")[1]);
+    const existingProperties = edge.getElementsByClassName("propertyClass");
+    for (var i = existingProperties.length - 1; i >= 0; i--) {
+        existingProperties[0].parentNode.removeChild(existingProperties[0]);
+    }
 }
 
 function identifierButton(id){
@@ -236,7 +347,9 @@ function addProperty(node){
             select.appendChild(el);
         }
     }
-    
+    let selectProperty = property.getElementsByClassName("property_select")[0];
+    selectProperty.id = "select-" + property.id.split("-")[1];
+    fillOptionsNode(selectProperty, properties);
 
     node.appendChild(property);
 }
@@ -276,7 +389,10 @@ function addEdgeProperty(edge){
             select.appendChild(el);
         }
     }
-        edge.appendChild(property);
+    let selectProperty = property.getElementsByClassName("property_select")[0];
+    selectProperty.id = "edgeSelect-" + property.id.split("-")[1];
+    fillOptionsNode(selectProperty, edgeProperties);
+    edge.appendChild(property);
 }
 
 function addIdentifier(node){
@@ -292,10 +408,13 @@ function addIdentifier(node){
     identifier.id = node.id + "." + pc;   
     identifier.innerHTML = identifierHTML;
     let deleteIdentifierButton = identifier.getElementsByClassName("removeidentifierbutton")[0];
+    let selectProperty = identifier.getElementsByClassName("property_select")[0];
     if (identifier.id.startsWith("from")){
         deleteIdentifierButton.id = "removefromidentifierbutton-" + identifier.id.split("-")[1];
+        fillOptionsNode(selectProperty, propertiesFrom);
     } else {
         deleteIdentifierButton.id = "removetoidentifierbutton-" + identifier.id.split("-")[1];
+        fillOptionsNode(selectProperty, propertiesTo);
     }
 
     let select = identifier.getElementsByClassName("headers")[0];
@@ -347,6 +466,33 @@ async function execute(){
     }
 }
 
+/**
+ * Get all data from the nodes into a javascript object to use them in the edge mapping
+ */
+function getNodesData() {
+    const nodesData = [];
+    let nodes = document.getElementsByClassName("nodeClass");
+    for(let n = 0; n < nodes.length; n++){
+        const nodeData = {
+            name: '',
+            properties: []
+        }
+        let node = nodes[n];
+        let properties = node.getElementsByClassName("propertyClass");
+        const nodeSelect = node.getElementsByClassName("node_select");
+        const nodeName = nodeSelect.length ?  nodeSelect[0].value : node.getElementsByClassName("label")[0].value;
+        nodeData.name = nodeName;
+        for(let p = 0; p < properties.length; p++){
+            let property = properties[p];
+            const propertySelect = property.getElementsByClassName("property_select");
+            const propertyName = propertySelect.length ? propertySelect[0].value : property.getElementsByClassName("property")[0].value;
+            nodeData.properties.push(propertyName);
+        }
+        nodesData.push(nodeData);
+    }
+    return nodesData;
+}
+
 function createNodeQuery(){
     let queries = [];
 
@@ -354,13 +500,16 @@ function createNodeQuery(){
     for(let n = 0; n < nodes.length; n++){
         let node = nodes[n];
         let properties = node.getElementsByClassName("propertyClass");
-        let query = "CREATE (n:" + node.getElementsByClassName("label")[0].value + ") ";
+        const nodeSelect = node.getElementsByClassName("node_select");
+        const nodeName = nodeSelect.length ?  nodeSelect[0].value : node.getElementsByClassName("label")[0].value;
+        let query = "CREATE (n:" + nodeName + ") ";
         for(let p = 0; p < properties.length; p++){
             let property = properties[p];
             let headers = property.getElementsByClassName("headers")[0];
-            query += "SET n." + property.getElementsByClassName("property")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
+            const propertySelect = property.getElementsByClassName("property_select");
+            const propertyName = propertySelect.length ? propertySelect[0].value : property.getElementsByClassName("property")[0].value;
+            query += "SET n." + propertyName + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
-
         queries.push(query + " RETURN 1");
     }
     return queries;
@@ -590,7 +739,7 @@ function fillProperties(node){
             }
         }
         select.selectedIndex = h;
-        let selectProperty = property.getElementsByClassName("headers")[1];
+        let selectProperty = property.getElementsByClassName("property_select")[0];
         selectProperty.id = "select-" + property.id.split("-")[1];
         fillOptionsNode(selectProperty, properties);
         // auto select properties with same name than column
@@ -622,11 +771,22 @@ function checkInput(){
     let textFields = true;
     let inputs = document.getElementsByTagName("input");
     for (let i=0; i<inputs.length; i++){
-        if (inputs[i].value === ""){
+
+        if (inputs[i].value === "" && inputs[i].type !== 'hidden'){
             inputs[i].style.border ="2px solid #EC5B62";
             textFields = false;
         } else {
             inputs[i].style.border ="";
+        }
+    }
+    let node_selects = Array.from(document.getElementsByClassName("node_select"));
+    let all_selects = Array.from(document.getElementsByClassName("property_select")).concat(node_selects);
+    for (let i=0; i<all_selects.length; i++){
+        if (all_selects[i].value === ""){
+            all_selects[i].style.border ="2px solid #EC5B62";
+            textFields = false;
+        } else {
+            all_selects[i].style.border ="";
         }
     }
     let relIds = true;
