@@ -8,6 +8,7 @@ body {
 	justify-content: center;
 	align-items: center;
 	background-color: #FDFDFD;
+	overflow: auto;
 }
 
 
@@ -42,7 +43,7 @@ td.edgename {
 	}
 
 	.label {
-		margin-right: 16px;
+		margin: 0 16px 0 8px;
 		height: 18px;
 	}
 
@@ -171,17 +172,21 @@ input[type='checkbox']{
     grid-gap: 16px;
 	align-items: center;
 	margin-bottom: 8px;
+	background-color: #F4F4F4;
+	padding: 12px;
+	border-radius: 8px;
 }
 
 .headers {
-	height: 18px;
+	height: 44px;
+	margin: 0 16px 0 8px;
 }
 
 .nextstep {
 	background-color: white;
 	border: 1px solid grey;
-	border-radius: 24px;
-	padding: 24px;
+	border-radius: 8px;
+	padding: 24px 40px;
 	position: absolute;
 	color: black;
 	z-index: 2;
@@ -189,6 +194,12 @@ input[type='checkbox']{
 	left: 50%;
 	-ms-transform: translate(-50%, -50%);
 	transform: translate(-50%, -50%);
+}
+
+.popupTitle {
+	font-weight: 600;
+	margin: 8px 0 24px 0;
+	text-align: center;
 }
 
 .overlay{
