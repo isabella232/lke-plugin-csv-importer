@@ -25,7 +25,7 @@ module.exports = function(options) {
                 throw new Error('Payload is empty.');
             }
             let nodesPromise = [];
-            res.body.nodes.forEach((node) => {
+            req.body.nodes.forEach((node) => {
                 if(!node || !node.categories || !node.properties) {
                     throw new Error('Node parameters are invalid or missing.');
                 }
@@ -56,7 +56,7 @@ module.exports = function(options) {
                 throw new Error('Payload is empty.');
             }
             let edgesPromise = [];
-            res.body.nodes.forEach((node) => {
+            req.body.nodes.forEach((node) => {
                 if(!node || !node.categories || !node.properties) {
                     throw new Error('Edge parameters are invalid or missing.');
                 }
