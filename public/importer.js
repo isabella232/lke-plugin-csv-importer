@@ -440,11 +440,91 @@ function addIdentifier(node){
     node.appendChild(identifier);
 }
 
-function execute() {
+/**
+ * make XMLHttpRequest
+ * @param verb : string  default value 'GET'
+ * @param url : string   API end point
+ * @param body : Object
+ * @returns {Promise<any>}
+ */
+function makeRequest(verb = 'GET', url, body) {
+    const xmlHttp = new XMLHttpRequest();
+    return new Promise((resolve, reject) => {
+        xmlHttp.onreadystatechange = () => {
+            // Only run if the request is complete
+            if (xmlHttp.readyState !== 4) {
+                return;
+            }
+            // Process the response
+            if (xmlHttp.status >= 200 && xmlHttp.status < 300) {
+                // If successful
+                resolve(xmlHttp);
+            } else {
+                const message = typeof xmlHttp.response === 'string' ? xmlHttp.response : JSON.parse(xmlHttp.response).body.error;
+                // If failed
+                reject({
+                    status: xmlHttp.status,
+                    statusText: xmlHttp.statusText,
+                    body: message
+                });
+            }
+        };
+        xmlHttp.open(verb, url);
+        xmlHttp.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+        xmlHttp.send(JSON.stringify(body));
+    });
+}
+
+/**
+ * Handle request errors
+ * @param event : Object
+ */
+function handleError(event) {
+    stopWaiting();
+    alert(`Error\n${event.body}`);
+    throw Error(event.body);
+}
+
+async function execute() {
     const check = checkInput();
     if (check === true) {
-        console.log('execute');
-        console.log(createDataForQuery());
+        const dataQuery = createDataForQuery();
+        try {
+            startWaiting();
+            let visualRes = 'Import successfull!';
+            if (dataQuery.nodes.length) {
+                const resNodes = await makeRequest(
+                    'POST',
+                    // `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,50ecda20
+                    `api/addNodes?sourceKey=50ecda20`,
+                    {
+                        nodes: dataQuery.nodes
+                    }
+                );
+                const data = JSON.parse(resNodes.result);
+                visualRes += `\n\nNodes imported: ${data.success}/${data.total}`;
+                if (data.failed) {
+                    visualRes += `\nPlease review: ${data.failed} nodes were not imported`;
+                }
+            }
+            if (dataQuery.edges.length) {
+                const resEdges = await makeRequest(
+                    'POST',
+                    `api/addEdges?sourceKey=${sessionStorage.getItem("sourceKey")}`,
+                    {
+                        edges: dataQuery.edges
+                    }
+                );
+                const data = JSON.parse(resEdges.result);
+                visualRes += `\n\nEdges imported: ${data.success}/${data.total}`;
+                if (data.failed) {
+                    visualRes += `\nPlease review: ${data.failed} edges were not imported`;
+                }
+            }
+            stopWaitingNextStep();
+        } catch(e) {
+            handleError(e);
+        }
     } else {
         alert(check);
     }
@@ -614,7 +694,7 @@ function createEdgeQuery(){
         let toNode = table.getElementsByClassName("toname")[0];
 
         let fromIdentifiers = fromNode.getElementsByClassName("identifierClass");
-        let fromQuery = "MATCH (f:" + fromNode.getElementsByClassName("label")[0].value + ") ";
+        let fromQuery = "MATCH (f:" + fromNode.getElementsByClassName("node_select")[0].value + ") ";
         for(let p = 0; p < fromIdentifiers.length; p++){
             let identifier = fromIdentifiers[p];
             let headers = identifier.getElementsByClassName("headers")[0];
@@ -623,20 +703,24 @@ function createEdgeQuery(){
             } else {
                 fromQuery += "WHERE f."
             }
-            fromQuery += identifier.getElementsByClassName("identifier")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
+            fromQuery += identifier.getElementsByClassName("property_select")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
          
+        const edgeType = edge.getElementsByClassName("edge_select");
+        const edgeTypeFinal = edgeType.length ? edgeType[0].value : edge.getElementsByClassName("label")[0].value;
         let properties = edge.getElementsByClassName("propertyClass");
-        let edgeQuery = "MERGE (f)-[e:" + edge.getElementsByClassName("label")[0].value + "]->(t) ";
+        let edgeQuery = "MERGE (f)-[e:" + edgeTypeFinal + "]->(t) ";
         console.log("properties: " + properties.length);
         for(let p = 0; p < properties.length; p++){
             let property = properties[p];
             let headers = property.getElementsByClassName("headers")[0];
-            edgeQuery += "SET e." + property.getElementsByClassName("edgeproperty")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
+            const edgePropertySelect = property.getElementsByClassName("property_select");
+            const propertyName = edgePropertySelect.length ? edgePropertySelect[0].value : property.getElementsByClassName("edgeproperty")[0].value;
+            edgeQuery += "SET e." + propertyName + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
 
         let toIdenfiers = toNode.getElementsByClassName("identifierClass");
-        let toQuery = "MATCH (t:" + toNode.getElementsByClassName("label")[0].value + ") ";
+        let toQuery = "MATCH (t:" + toNode.getElementsByClassName("node_select")[0].value + ") ";
         for(let p = 0; p < toIdenfiers.length; p++){
             let identifier = toIdenfiers[p];
             let headers = identifier.getElementsByClassName("headers")[0];
@@ -646,7 +730,7 @@ function createEdgeQuery(){
             } else {
                 toQuery += "WHERE t."
             }
-            toQuery += identifier.getElementsByClassName("identifier")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
+            toQuery += identifier.getElementsByClassName("property_select")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
 
         let query = fromQuery + toQuery + edgeQuery;
@@ -659,10 +743,8 @@ function createEdgeQuery(){
 
 function createDataForQuery() {
     const nodes = [];
-    const edges = [];
     const nodeConfigs = getNodesData();
-    const edgeConfigs = getEdgesData();
-    let csv = JSON.parse(sessionStorage.getItem("rows"));
+    const csv = JSON.parse(sessionStorage.getItem("rows"));
     for (let l = 0; l < csv.length; l++) {
         let line = csv[l].split(",");
         nodeConfigs.forEach(nodeConfig => {
@@ -676,36 +758,10 @@ function createDataForQuery() {
             };
             nodes.push(node);
         });
-        edgeConfigs.forEach(edgeConfig => {
-            const properties = {};
-            edgeConfig.edge.properties.forEach((property) => {
-                properties[property.propertyName] = line[property.indexColumn];
-            });
-            const fromIdentifiers = {};
-            edgeConfig.from.identifiers.forEach((identifier) => {
-                fromIdentifiers[identifier.identifierName] = line[identifier.indexColumn];
-            });
-            const toIdentifiers = {};
-            edgeConfig.to.identifiers.forEach((identifier) => {
-                toIdentifiers[identifier.identifierName] = line[identifier.indexColumn];
-            });
-            const edge = {
-                from: {
-                    category: edgeConfig.from.category,
-                    identifiers: fromIdentifiers
-                },
-                to: {
-                    category:edgeConfig.to.category,
-                    identifiers: toIdentifiers
-                },
-                edge: {
-                    type: edgeConfig.edge.type,
-                    properties
-                }
-            };
-            edges.push(edge);
-        });
     }
+    const queryTemplates = createEdgeQuery();
+    const header = sessionStorage.getItem("headers");
+    const edges = createQueries(queryTemplates, csv, header);
     return {
         nodes,
         edges
