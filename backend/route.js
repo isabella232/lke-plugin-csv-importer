@@ -1,6 +1,6 @@
 'use strict';
 const bodyParser = require('body-parser');
-const allSetled = require('promise.allsettled');
+const allSettled = require('promise.allsettled');
 
 module.exports = function(options) {
     options.router.use(bodyParser.json({limit: '100mb', extended: true}));
