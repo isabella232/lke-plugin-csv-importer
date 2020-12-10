@@ -14,7 +14,8 @@ const nodeHTML = "<div class=\"nodeContainer\"><div class=\"labelContainer\"><di
 const fromNodeHTML = "<label for=\"label\">Label </label>\n<select onchange=\"onNodeSelect(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option></select><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button>";
 const propertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"property\" placeholder=\"Property name\"><select onchange=\"createNewProperty(this.id)\" class=\"property_select label\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removepropertybutton secondaryButton\" onclick=\"removeProperty(this.id)\">Remove property</button>";
 const edgeHTML = "<label for=\"label\">Label </label>\n<input type=\"hidden\" class=\"label\" placeholder=\"label\"><select onchange=\"onEdgeSelected(this.id)\" class=\"edge_select label\"><option value='' disabled selected>Select a type</option><option value='##type##' \">Create new type</option></select><button class=\"edgepropertybutton quietButton\" onclick=\"edgePropertyButton(this.id)\">Add property</button><button class=\"removeedgebutton secondaryButton\" onclick=\"removeEdge(this.id)\">Remove edge</button><br>";
-const edgeTableHTML = "<table><thead><th>Source node</th><th>Edge</th><th>Destination node</th></thead><tbody><tr><td class=\"fromname\"></td><td class=\"edgename\"></td><td class=\"toname\"></td></tr></tbody></table><br>"
+// const edgeTableHTML = "<table><thead><th>Source node</th><th>Edge</th><th>Destination node</th></thead><tbody><tr><td class=\"fromname\"></td><td class=\"edgename\"></td><td class=\"toname\"></td></tr></tbody></table><br>"
+const edgeTableHTML = "<div><div>Source node</div><div class=\"fromname\"></div><div>Edge</div><div class=\"edgename\"></div><div>Destination node</div><div class=\"toname\"></div></div>"
 const edgePropertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"edgeproperty\" placeholder=\"property name\"><select onchange=\"createNewPropertyEdge(this.id)\" class=\"property_select label\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removeedgepropertybutton secondaryButton\" onclick=\"removeEdgeProperty(this.id)\">Remove Property</button>";
 const identifierHTML = "<label for=\"property\"><br>Idenfitier </label><select class=\"headers\"></select><label for=\"property\"> → </label><select class=\"property_select label\"><option value='' disabled selected>Select a property</option></select><button class=\"removeidentifierbutton secondaryButton\" onclick=\"removeIdentifier(this.id)\">Remove identifier</button>";
 const nextstepHTML = "<p class=\"popupTitle\">The file has been successfully imported</p><a href='' class=\"quietButton\">Go to Linkurious</a><button class=\"newcsvbutton primaryButton\" onclick=\"newCSVButton()\">Upload another file</button>"
@@ -257,7 +258,7 @@ function onNodeSelect(id) {
     const propertiesAPI = ['uid', 'first_name'];
     let newProperties = [];
     if (selectedCategory.length) {
-        newProperties = selectedCategory[0].properties;
+        newProperties = selectedCategory[0].properties.map(property => property.propertyName);
     }
     const allProperties = propertiesAPI.concat(
         newProperties
@@ -440,31 +441,37 @@ function addIdentifier(node){
     node.appendChild(identifier);
 }
 
-async function execute(){
-    let check = checkInput();
-
-    if(check == true){
-        startWaiting();
-        try{
-            let queryTemplates = createNodeQuery().concat(createEdgeQuery());
-            let csv = JSON.parse(sessionStorage.getItem("rows"));
-            let header = sessionStorage.getItem("headers");
-    
-            let queries = createQueries(queryTemplates, csv, header);
-            let len = queries.length;
-            for (i in queries){
-              let info = `Running query n. ${parseInt(i) + 1} of ${len}`
-              await runQuery(queries[i], info);
-            }
-            stopWaitingNextStep();
-        } catch {
-            stopWaiting();
-        }
-    }
-    else {
-        alert(check);
-    }
+function execute() {
+    console.log('execute');
+    console.log(createDataForQuery());
 }
+
+
+// async function execute(){
+//     let check = checkInput();
+
+//     if(check == true){
+//         startWaiting();
+//         try{
+//             let queryTemplates = createNodeQuery().concat(createEdgeQuery());
+//             let csv = JSON.parse(sessionStorage.getItem("rows"));
+//             let header = sessionStorage.getItem("headers");
+    
+//             let queries = createQueries(queryTemplates, csv, header);
+//             let len = queries.length;
+//             for (i in queries){
+//               let info = `Running query n. ${parseInt(i) + 1} of ${len}`
+//               await runQuery(queries[i], info);
+//             }
+//             stopWaitingNextStep();
+//         } catch {
+//             stopWaiting();
+//         }
+//     }
+//     else {
+//         alert(check);
+//     }
+// }
 
 /**
  * Get all data from the nodes into a javascript object to use them in the edge mapping
@@ -486,7 +493,12 @@ function getNodesData() {
             let property = properties[p];
             const propertySelect = property.getElementsByClassName("property_select");
             const propertyName = propertySelect.length ? propertySelect[0].value : property.getElementsByClassName("property")[0].value;
-            nodeData.properties.push(propertyName);
+            let headers = property.getElementsByClassName("headers")[0];
+            const indexColumn = headers.options[headers.selectedIndex].value;
+            nodeData.properties.push({
+                indexColumn,
+                propertyName
+            });
         }
         nodesData.push(nodeData);
     }
@@ -513,6 +525,76 @@ function createNodeQuery(){
         queries.push(query + " RETURN 1");
     }
     return queries;
+}
+
+/**
+ * Get all data from the edges into a javascript object to use them in backend requests
+ */
+function getEdgesData() {
+    const edgesData = [];
+    let tables = document.getElementsByClassName("edgetable");
+    for (let e = 0; e<tables.length; e++) {
+        let table = tables[e];
+        const edge = {
+            from: {
+                category: '',
+                identifiers: []
+            },
+            to: {
+                category: '',
+                identifiers: []
+            },
+            edge: {
+                type: '',
+                properties: []
+            }
+        }
+        let fromNode = table.getElementsByClassName("fromname")[0];
+        let edgeElement = table.getElementsByClassName("edgename")[0];
+        let toNode = table.getElementsByClassName("toname")[0];
+
+        edge.from.category = fromNode.getElementsByClassName("node_select")[0].value;
+        let fromIdentifiers = fromNode.getElementsByClassName("identifierClass");
+        for(let p = 0; p < fromIdentifiers.length; p++){
+            let identifier = fromIdentifiers[p];
+            let headers = identifier.getElementsByClassName("headers")[0];
+            const indexColumn = headers.options[headers.selectedIndex].value
+            const identifierName = identifier.getElementsByClassName("property_select")[0].value;
+            edge.from.identifiers.push({
+                indexColumn,
+                identifierName
+            });
+        }
+        edge.to.category = toNode.getElementsByClassName("node_select")[0].value;
+        let toIdentifiers = toNode.getElementsByClassName("identifierClass");
+        for(let p = 0; p < toIdentifiers.length; p++){
+            let identifier = toIdentifiers[p];
+            let headers = identifier.getElementsByClassName("headers")[0];
+            const indexColumn = headers.options[headers.selectedIndex].value
+            const identifierName = identifier.getElementsByClassName("property_select")[0].value;
+            edge.to.identifiers.push({
+                indexColumn,
+                identifierName
+            });
+        }
+
+        const edgeType = edgeElement.getElementsByClassName("edge_select");
+        edge.edge.type = edgeType.length ? edgeType[0].value : edgeElement.getElementsByClassName("label")[0].value;
+        let properties = edgeElement.getElementsByClassName("propertyClass");
+        for(let p = 0; p < properties.length; p++){
+            let property = properties[p];
+            let headers = property.getElementsByClassName("headers")[0];
+            const indexColumn = headers.options[headers.selectedIndex].value;
+            const edgePropertySelect = property.getElementsByClassName("property_select");
+            const propertyName = edgePropertySelect.length ? edgePropertySelect[0].value : property.getElementsByClassName("edgeproperty")[0].value;
+            edge.edge.properties.push({
+                indexColumn,
+                propertyName
+            });
+        }
+        edgesData.push(edge);
+    }
+    return edgesData;
 }
 
 function createEdgeQuery(){
@@ -571,6 +653,60 @@ function createEdgeQuery(){
     return queries;
 }
 
+function createDataForQuery() {
+    const nodes = [];
+    const edges = [];
+    const nodeConfigs = getNodesData();
+    const edgeConfigs = getEdgesData();
+    let csv = JSON.parse(sessionStorage.getItem("rows"));
+    for (let l = 0; l < csv.length; l++) {
+        let line = csv[l].split(",");
+        nodeConfigs.forEach(nodeConfig => {
+            const properties = {};
+            nodeConfig.properties.forEach((property) => {
+                properties[property.propertyName] = line[property.indexColumn];
+            })
+            const node = {
+                categories: [nodeConfig.name],
+                properties
+            };
+            nodes.push(node);
+        });
+        edgeConfigs.forEach(edgeConfig => {
+            const properties = {};
+            edgeConfig.edge.properties.forEach((property) => {
+                properties[property.propertyName] = line[property.indexColumn];
+            });
+            const fromIdentifiers = {};
+            edgeConfig.from.identifiers.forEach((identifier) => {
+                fromIdentifiers[identifier.identifierName] = line[identifier.indexColumn];
+            });
+            const toIdentifiers = {};
+            edgeConfig.to.identifiers.forEach((identifier) => {
+                toIdentifiers[identifier.identifierName] = line[identifier.indexColumn];
+            });
+            const edge = {
+                from: {
+                    category: edgeConfig.from.category,
+                    identifiers: fromIdentifiers
+                },
+                to: {
+                    category:edgeConfig.to.category,
+                    identifiers: toIdentifiers
+                },
+                edge: {
+                    type: edgeConfig.edge.type,
+                    properties
+                }
+            };
+            edges.push(edge);
+        });
+    }
+    return {
+        nodes,
+        edges
+    }
+}
 
 function createQueries(queryTemplates, csv, header){
     let res = [];
@@ -612,7 +748,7 @@ function removeNode(node){
 function removeEdge(edge){
     let edgeID = "edge-" + edge.split("-")[1];
     let element = document.getElementById(edgeID);
-    let table = element.parentElement.parentElement.parentElement.parentElement;
+    let table = element.parentElement.parentElement.parentElement;
    
     table.parentNode.removeChild(table);
     
