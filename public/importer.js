@@ -9,6 +9,10 @@ let properties = [];
 let edgeProperties = [];
 let propertiesFrom = [];
 let propertiesTo = [];
+// Keep schema of nodes in the state to avoid multiple requests
+let schemaNode;
+// Keep schema of edges in the state to avoid multiple requests
+let schemaEdge;
 
 const nodeHTML = "<div><div class=\"labelContainer\"><div><label for=\"label\" class=\"titleLabel\">Label</label><input type=\"hidden\" class=\"label\" placeholder=\"Node category\"><select onchange=\"createNewCategory(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option><option value='##category##' \">Create new category</option></select></div><button class=\"removenodebutton dangerButton\" onclick=\"removeNode(this.id)\">Remove node</button></div><div class=\"propertyContainer\"><div>Properties</div><button class=\"propertybutton quietButton\" onclick=\"propertyButton(this.id)\">Add property</button></div></div>";
 const fromNodeHTML = "<div><div><label for=\"label\" class=\"titleLabel\">Label </label>\n<select onchange=\"onNodeSelect(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option></select></div><div class=\"propertyContainer\"><div>Identifiers</div><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button></div></div>";
@@ -53,9 +57,8 @@ function readFile(){
     }
 }
 
-function addNode(){   
-    // TODO: to be replaced by API call 
-    const nodeCategories = ['Person', 'Car'];
+async function addNode(){   
+    const nodeCategories = await getCategories('node');
     let nodes = document.getElementById("nodes");
     let nc = parseInt(nodes.getAttribute("nodecounter")) + 1;
     nodes.setAttribute("nodecounter", nc)
@@ -97,7 +100,7 @@ function fillOptionsNode(select, categories) {
 /**
  * Make the category select disappear and replace it with a text input
  */
-function createNewCategory(id) {
+async function createNewCategory(id) {
     const node = document.getElementById("node-" + id.split("-")[1]);
     const select = node.getElementsByClassName("node_select")[0];
     if (select.value === '##category##') {
@@ -106,7 +109,7 @@ function createNewCategory(id) {
         input.type = 'text';
         properties = [];
     } else if (select.value) {
-        properties = ['uid', 'first_name'];
+        properties = await getProperties(select.value, 'node');
     }
     fillProperties(node);
 }
@@ -114,7 +117,7 @@ function createNewCategory(id) {
 /**
  * When an edge type is selected
  */
-function onEdgeSelected(id) {
+async function onEdgeSelected(id) {
     const edge = document.getElementById("edge-" + id.split("-")[1]);
     const select = edge.getElementsByClassName("edge_select")[0];
     if (select.value === '##type##') {
@@ -122,8 +125,8 @@ function onEdgeSelected(id) {
         const input = edge.getElementsByClassName("label")[0];
         input.type = 'text';
         edgeProperties = [];
-    } else {
-        edgeProperties = ['uid', 'edge_property1'];
+    } else if (select.value) {
+        edgeProperties = await getProperties(select.value, 'edge');
     }
     deleteAllEdgeProperties(id);
 }
@@ -154,7 +157,7 @@ function createNewPropertyEdge(id) {
     }
 }
 
-function addEdge(){
+async function addEdge(){
     let edges = document.getElementById("edges");
     let ec = parseInt(edges.getAttribute("edgecounter")) + 1;
     edges.setAttribute("edgecounter", ec);
@@ -172,8 +175,7 @@ function addEdge(){
 
     let select = edge.getElementsByClassName("edge_select")[0];
     select.id = "typeselect-" + ec;
-    // TODO: replace by call to api
-    const edgeTypeAPI = ['type_1', 'type_2'];
+    const edgeTypeAPI = await getCategories('edge');
     fillOptionsNode(select, edgeTypeAPI);
 
     let edgename = table.getElementsByClassName("edgename")[0];
@@ -191,9 +193,8 @@ function addEdge(){
     addToNode(edge);
 }
 
-function addFromNode(edge){
-    // TODO: to be replaced by API call 
-    const nodeCategories = ['Person', 'Car'];
+async function addFromNode(edge){
+    const nodeCategories = await getCategories('node');
     let nc = edge.getAttribute("id").split("-")[1]
     let fromNode = document.createElement("div");
     edge.className = "fromNode"
@@ -219,9 +220,8 @@ function addFromNode(edge){
     fillOptionsNode(select, allCategories);
 }
 
-function addToNode(edge){
-    // TODO: to be replaced by API call 
-    const nodeCategories = ['Person', 'Car'];
+async function addToNode(edge){
+    const nodeCategories = await getCategories('node');
     let nc = edge.getAttribute("id").split("-")[1]
     let toNode = document.createElement("div");
     edge.className = "toNode"
@@ -250,11 +250,11 @@ function addToNode(edge){
 /**
  * When a node catgeory is selected (source or destination node)
  */
-function onNodeSelect(id) {
+async function onNodeSelect(id) {
     const select = document.getElementById(id);
     const nodesData = getNodesData();
     selectedCategory = nodesData.filter(node => node.name === select.value);
-    const propertiesAPI = ['uid', 'first_name'];
+    const propertiesAPI = await getProperties(select.value, 'node');
     let newProperties = [];
     if (selectedCategory.length) {
         newProperties = selectedCategory[0].properties.map(property => property.propertyName);
@@ -440,11 +440,154 @@ function addIdentifier(node){
     node.appendChild(identifier);
 }
 
-function execute() {
+/**
+ * make XMLHttpRequest
+ * @param verb : string  default value 'GET'
+ * @param url : string   API end point
+ * @param body : Object
+ * @returns {Promise<any>}
+ */
+function makeRequest(verb = 'GET', url, body) {
+    const xmlHttp = new XMLHttpRequest();
+    return new Promise((resolve, reject) => {
+        xmlHttp.onreadystatechange = () => {
+            // Only run if the request is complete
+            if (xmlHttp.readyState !== 4) {
+                return;
+            }
+            // Process the response
+            if (xmlHttp.status >= 200 && xmlHttp.status < 300) {
+                // If successful
+                resolve(xmlHttp);
+            } else {
+                const message = typeof xmlHttp.response === 'string' ? xmlHttp.response : JSON.parse(xmlHttp.response).body.error;
+                // If failed
+                reject({
+                    status: xmlHttp.status,
+                    statusText: xmlHttp.statusText,
+                    body: message
+                });
+            }
+        };
+        xmlHttp.open(verb, url);
+        xmlHttp.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+        xmlHttp.send(JSON.stringify(body));
+    });
+}
+
+/**
+ * Get all categories of nodes or edges
+ */
+async function getCategories(entityType) {
+    const schema = await getSchema(entityType);
+    return schema
+        .filter(category => category.access === 'write')
+        .map(category => category.itemType);
+}
+
+/**
+ * For one category of node or edge get all its properties
+ */
+async function getProperties(categoryName, entityType) {
+    const schema = await getSchema(entityType);
+    const selectedCategory = schema.find(
+        category => category.access === 'write' && category.itemType === categoryName
+    );
+    if (selectedCategory) {
+        return selectedCategory.properties.map(property => property.propertyKey);
+    }
+    return [];
+}
+
+/**
+ * set the schema for node or edge
+ * @param result
+ */
+function setSchema(result, entityType) {
+    if (result.status === 200) {
+        if (entityType === 'edge') {
+            schemaEdge = result.body.results;
+            return schemaEdge;
+        } else {
+            schemaNode = result.body.results;
+            return schemaNode;
+        }
+    } else {
+        handleError(result);
+    }
+}
+
+/**
+ * make a request to get the schema for node or edge
+ * @returns {Promise<void>}
+ */
+async function getSchema(entityType) {
+    let schema = entityType === 'edge' ? schemaEdge : schemaNode;
+    if (schema !== undefined) {
+        return schema;
+    }
+    try {
+        const result = await makeRequest(
+            'GET',
+            `api/getSchema?sourceKey=${sessionStorage.getItem("sourceKey")}&entityType=${entityType}`,
+            null
+        );
+        return setSchema(JSON.parse(result.response), entityType);
+    } catch(e) {
+        handleError(e);
+    }
+}
+
+/**
+ * Handle request errors
+ * @param event : Object
+ */
+function handleError(event) {
+    stopWaiting();
+    alert(`Error\n${event.body}`);
+    throw Error(event.body);
+}
+
+async function execute() {
     const check = checkInput();
     if (check === true) {
-        console.log('execute');
-        console.log(createDataForQuery());
+        const dataQuery = createDataForQuery();
+        try {
+            startWaiting();
+            const feedback = {};
+            if (dataQuery.nodes.length) {
+                const resNodes = await makeRequest(
+                    'POST',
+                    `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,
+                    {
+                        nodes: dataQuery.nodes
+                    }
+                );
+                const data = JSON.parse(resNodes.response);
+                feedback.messageNodes = `Nodes imported: ${data.success}/${data.total}`;
+                if (data.failed) {
+                    feedback.warningNodes = `Please review: ${data.failed} nodes were not imported`;
+                }
+            }
+            if (dataQuery.edges.length) {
+                const resEdges = await makeRequest(
+                    'POST',
+                    `api/addEdges?sourceKey=${sessionStorage.getItem("sourceKey")}`,
+                    {
+                        edges: dataQuery.edges
+                    }
+                );
+                const data = JSON.parse(resEdges.response);
+                feedback.messageEdges = `Edges imported: ${data.success}/${data.total}`;
+                if (data.failed) {
+                    feedback.warningEdges = `Please review: ${data.failed} edges were not imported`;
+                }
+            }
+            
+            stopWaitingNextStep(feedback);
+        } catch(e) {
+            handleError(e);
+        }
     } else {
         alert(check);
     }
@@ -614,7 +757,7 @@ function createEdgeQuery(){
         let toNode = table.getElementsByClassName("toname")[0];
 
         let fromIdentifiers = fromNode.getElementsByClassName("identifierClass");
-        let fromQuery = "MATCH (f:" + fromNode.getElementsByClassName("label")[0].value + ") ";
+        let fromQuery = "MATCH (f:" + fromNode.getElementsByClassName("node_select")[0].value + ") ";
         for(let p = 0; p < fromIdentifiers.length; p++){
             let identifier = fromIdentifiers[p];
             let headers = identifier.getElementsByClassName("headers")[0];
@@ -623,20 +766,24 @@ function createEdgeQuery(){
             } else {
                 fromQuery += "WHERE f."
             }
-            fromQuery += identifier.getElementsByClassName("identifier")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
+            fromQuery += identifier.getElementsByClassName("property_select")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
          
+        const edgeType = edge.getElementsByClassName("edge_select");
+        const edgeTypeFinal = edgeType.length ? edgeType[0].value : edge.getElementsByClassName("label")[0].value;
         let properties = edge.getElementsByClassName("propertyClass");
-        let edgeQuery = "MERGE (f)-[e:" + edge.getElementsByClassName("label")[0].value + "]->(t) ";
+        let edgeQuery = "MERGE (f)-[e:" + edgeTypeFinal + "]->(t) ";
         console.log("properties: " + properties.length);
         for(let p = 0; p < properties.length; p++){
             let property = properties[p];
             let headers = property.getElementsByClassName("headers")[0];
-            edgeQuery += "SET e." + property.getElementsByClassName("edgeproperty")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
+            const edgePropertySelect = property.getElementsByClassName("property_select");
+            const propertyName = edgePropertySelect.length ? edgePropertySelect[0].value : property.getElementsByClassName("edgeproperty")[0].value;
+            edgeQuery += "SET e." + propertyName + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
 
         let toIdenfiers = toNode.getElementsByClassName("identifierClass");
-        let toQuery = "MATCH (t:" + toNode.getElementsByClassName("label")[0].value + ") ";
+        let toQuery = "MATCH (t:" + toNode.getElementsByClassName("node_select")[0].value + ") ";
         for(let p = 0; p < toIdenfiers.length; p++){
             let identifier = toIdenfiers[p];
             let headers = identifier.getElementsByClassName("headers")[0];
@@ -646,7 +793,7 @@ function createEdgeQuery(){
             } else {
                 toQuery += "WHERE t."
             }
-            toQuery += identifier.getElementsByClassName("identifier")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
+            toQuery += identifier.getElementsByClassName("property_select")[0].value + " = ~" + headers.options[headers.selectedIndex].value + "~ ";
         }
 
         let query = fromQuery + toQuery + edgeQuery;
@@ -659,10 +806,8 @@ function createEdgeQuery(){
 
 function createDataForQuery() {
     const nodes = [];
-    const edges = [];
     const nodeConfigs = getNodesData();
-    const edgeConfigs = getEdgesData();
-    let csv = JSON.parse(sessionStorage.getItem("rows"));
+    const csv = JSON.parse(sessionStorage.getItem("rows"));
     for (let l = 0; l < csv.length; l++) {
         let line = csv[l].split(",");
         nodeConfigs.forEach(nodeConfig => {
@@ -676,36 +821,10 @@ function createDataForQuery() {
             };
             nodes.push(node);
         });
-        edgeConfigs.forEach(edgeConfig => {
-            const properties = {};
-            edgeConfig.edge.properties.forEach((property) => {
-                properties[property.propertyName] = line[property.indexColumn];
-            });
-            const fromIdentifiers = {};
-            edgeConfig.from.identifiers.forEach((identifier) => {
-                fromIdentifiers[identifier.identifierName] = line[identifier.indexColumn];
-            });
-            const toIdentifiers = {};
-            edgeConfig.to.identifiers.forEach((identifier) => {
-                toIdentifiers[identifier.identifierName] = line[identifier.indexColumn];
-            });
-            const edge = {
-                from: {
-                    category: edgeConfig.from.category,
-                    identifiers: fromIdentifiers
-                },
-                to: {
-                    category:edgeConfig.to.category,
-                    identifiers: toIdentifiers
-                },
-                edge: {
-                    type: edgeConfig.edge.type,
-                    properties
-                }
-            };
-            edges.push(edge);
-        });
     }
+    const queryTemplates = createEdgeQuery();
+    const header = sessionStorage.getItem("headers");
+    const edges = createQueries(queryTemplates, csv, header);
     return {
         nodes,
         edges
@@ -826,13 +945,44 @@ function stopWaiting(){
     overlay.parentElement.removeChild(overlay);
 }
 
-function stopWaitingNextStep(){
+function stopWaitingNextStep(feedback) {
     let highlight = document.getElementsByClassName("highlight")[0];
     spinner.stop();
     let nextStep = document.createElement("div");
     nextStep.className = "nextstep";
     nextStep.innerHTML = nextstepHTML;
+    if (feedback.warningEdges || feedback.warningNodes) {
+        const title = nextStep.getElementsByTagName("p")[0];
+        title.innerText = 'The file has been partly imported';
+    }
     highlight.appendChild(nextStep);
+    const nextStepInserted = document.getElementsByClassName('nextstep')[0];
+    if (feedback.warningEdges) {
+        addParagraphToPopUp(nextStepInserted, feedback.warningEdges, true)
+    }
+    if (feedback.messageEdges) {
+        addParagraphToPopUp(nextStepInserted, feedback.messageEdges, false)
+    }
+    if (feedback.warningNodes) {
+        addParagraphToPopUp(nextStepInserted, feedback.warningNodes, true)
+    }
+    if (feedback.messageNodes) {
+        addParagraphToPopUp(nextStepInserted, feedback.messageNodes, false)
+    }
+}
+
+function addParagraphToPopUp(nextStep, message, warning) {
+    const elem = document.createElement("p");
+    elem.className = 'infoPopup';
+    if (warning) {
+        elem.className += ' warningPopup';
+    }
+    elem.innerText = message;
+    insertAfter(elem, nextStep.firstChild);
+}
+
+function insertAfter(newElement, referenceElement) {
+    referenceElement.parentNode.insertBefore(newElement, referenceElement.nextSibling);
 }
 
 function newCSVButton(){

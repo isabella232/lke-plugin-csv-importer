@@ -253,6 +253,15 @@ input[type='checkbox']{
 	text-align: center;
 }
 
+.infoPopup {
+	margin: 8px 0 24px 0;
+	text-align: center;
+}
+
+.warningPopup {
+	color: #ffc107;
+}
+
 .overlay{
 	height: 100%;
 	width: 100%;

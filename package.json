@@ -1,0 +1,32 @@
+{
+  "name": "lke-plugin-csv-importer",
+  "version": "1.0.0",
+  "description": "An LKE plugin to import csv files as nodes and edges.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "scripts/build.js"
+  },
+  "files": [
+    "manifest.json",
+    "public",
+    "backend"
+  ],
+  "bundledDependencies": [
+    "body-parser"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Linkurious/lke-plugin-csv-importer.git"
+  },
+  "author": "Yiğit Akbulut",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Linkurious/lke-plugin-csv-importer/issues"
+  },
+  "homepage": "https://github.com/Linkurious/lke-plugin-csv-importer#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "promise.allsettled": "^1.0.2"
+  }
+}
