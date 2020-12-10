@@ -1,5 +1,6 @@
 'use strict';
 const bodyParser = require('body-parser');
+const allSetled = require('promise.allsettled');
 
 module.exports = function(options) {
     options.router.use(bodyParser.json({limit: '100mb', extended: true}));
@@ -19,7 +20,7 @@ module.exports = function(options) {
         }
     });
 
-    options.router.post('/addNode', async (req, res) => {
+    options.router.post('/addNodes', async (req, res) => {
         try {
             if(!res.body || !res.body.nodes || typeof res.body.nodes !== typeof Array) {
                 throw new Error('Payload is empty.');
@@ -36,7 +37,7 @@ module.exports = function(options) {
                 }));
             });
             let totalSuccessful = 0, totalFailed = 0;
-            const results = await Promise.allSettled(nodesPromise);
+            const results = await allSettled(nodesPromise);
             totalSuccessful = results.filter((promise) => promise.status === 'fulfilled' ).length;
             totalFailed = results.length - totalSuccessful;
 
@@ -50,7 +51,7 @@ module.exports = function(options) {
         }
     });
 
-    options.router.post('/addEdge', async (req, res) => {
+    options.router.post('/addEdges', async (req, res) => {
         try {
             if(!res.body || !res.body.queries || typeof res.body.queries !== typeof Array) {
                 throw new Error('Payload is empty.');
@@ -66,7 +67,7 @@ module.exports = function(options) {
                 }));
             });
             let totalSuccessful = 0, totalFailed = 0;
-            const results = await Promise.allSettled(edgesPromise);
+            const results = await allSettled(edgesPromise);
             totalSuccessful = results.filter((promise) => promise.status === 'fulfilled' ).length;
             totalFailed = results.length - totalSuccessful;
             res.status(200);
