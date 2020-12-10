@@ -1,6 +1,6 @@
 'use strict';
 const bodyParser = require('body-parser');
-const allSetled = require('promise.allsettled');
+const allSettled = require('promise.allsettled');
 
 module.exports = function(options) {
     options.router.use(bodyParser.json({limit: '100mb', extended: true}));
@@ -22,7 +22,7 @@ module.exports = function(options) {
 
     options.router.post('/addNodes', async (req, res) => {
         try {
-            if(!res.body || !res.body.nodes || typeof res.body.nodes !== typeof Array) {
+            if(!req.body || !req.body.nodes || !Array.isArray(req.body.nodes)) {
                 throw new Error('Payload is empty.');
             }
             let nodesPromise = [];
@@ -53,16 +53,16 @@ module.exports = function(options) {
 
     options.router.post('/addEdges', async (req, res) => {
         try {
-            if(!res.body || !res.body.queries || typeof res.body.queries !== typeof Array) {
+            if(!req.body || !req.body.edges || !Array.isArray(req.body.edges)) {
                 throw new Error('Payload is empty.');
             }
             let edgesPromise = [];
-            req.body.nodes.forEach((node) => {
-                if(!node || !node.categories || !node.properties) {
+            req.body.edges.forEach((edge) => {
+                if(!edge || !edge.categories || !edge.properties) {
                     throw new Error('Edge parameters are invalid or missing.');
                 }
                 edgesPromise.push(options.getRestClient(req).graphQuery.runQuery({
-                    query: node.categories,
+                    query: edge.categories,
                     sourceKey: req.query.sourceKey
                 }));
             });
@@ -72,7 +72,7 @@ module.exports = function(options) {
             totalFailed = results.length - totalSuccessful;
             res.status(200);
             res.contentType('application/json');
-            res.send(JSON.stringify({total: req.body.queries.length, success: totalSuccessful, failed: totalFailed,  message: "Edges are imported."}));
+            res.send(JSON.stringify({total: req.body.edges.length, success: totalSuccessful, failed: totalFailed,  message: "Edges are imported."}));
         } catch (e) {
             res.status(412);
             res.send(JSON.stringify({status: 412, body: JSON.stringify(e)}));

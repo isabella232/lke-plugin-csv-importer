@@ -475,6 +475,10 @@ function makeRequest(verb = 'GET', url, body) {
     });
 }
 
+function getSchema() {
+
+}
+
 /**
  * Handle request errors
  * @param event : Object
@@ -491,7 +495,7 @@ async function execute() {
         const dataQuery = createDataForQuery();
         try {
             startWaiting();
-            let visualRes = 'Import successfull!';
+            const feedback = {};
             if (dataQuery.nodes.length) {
                 const resNodes = await makeRequest(
                     'POST',
@@ -501,10 +505,10 @@ async function execute() {
                         nodes: dataQuery.nodes
                     }
                 );
-                const data = JSON.parse(resNodes.result);
-                visualRes += `\n\nNodes imported: ${data.success}/${data.total}`;
+                const data = JSON.parse(resNodes.response);
+                feedback.messageNodes = `Nodes imported: ${data.success}/${data.total}`;
                 if (data.failed) {
-                    visualRes += `\nPlease review: ${data.failed} nodes were not imported`;
+                    feedback.warningNodes = `Please review: ${data.failed} nodes were not imported`;
                 }
             }
             if (dataQuery.edges.length) {
@@ -515,13 +519,14 @@ async function execute() {
                         edges: dataQuery.edges
                     }
                 );
-                const data = JSON.parse(resEdges.result);
-                visualRes += `\n\nEdges imported: ${data.success}/${data.total}`;
+                const data = JSON.parse(resEdges.response);
+                feedback.messageEdges = `Edges imported: ${data.success}/${data.total}`;
                 if (data.failed) {
-                    visualRes += `\nPlease review: ${data.failed} edges were not imported`;
+                    feedback.warningEdges = `Please review: ${data.failed} edges were not imported`;
                 }
             }
-            stopWaitingNextStep();
+            
+            stopWaitingNextStep(feedback);
         } catch(e) {
             handleError(e);
         }
@@ -882,13 +887,44 @@ function stopWaiting(){
     overlay.parentElement.removeChild(overlay);
 }
 
-function stopWaitingNextStep(){
+function stopWaitingNextStep(feedback) {
     let highlight = document.getElementsByClassName("highlight")[0];
     spinner.stop();
     let nextStep = document.createElement("div");
     nextStep.className = "nextstep";
     nextStep.innerHTML = nextstepHTML;
+    if (feedback.warningEdges || feedback.warningNodes) {
+        const title = nextStep.getElementsByTagName("p")[0];
+        title.innerText = 'The file has been partly imported';
+    }
     highlight.appendChild(nextStep);
+    const nextStepInserted = document.getElementsByClassName('nextstep')[0];
+    if (feedback.warningEdges) {
+        addParagraphToPopUp(nextStepInserted, feedback.warningEdges, true)
+    }
+    if (feedback.messageEdges) {
+        addParagraphToPopUp(nextStepInserted, feedback.messageEdges, false)
+    }
+    if (feedback.warningNodes) {
+        addParagraphToPopUp(nextStepInserted, feedback.warningNodes, true)
+    }
+    if (feedback.messageNodes) {
+        addParagraphToPopUp(nextStepInserted, feedback.messageNodes, false)
+    }
+}
+
+function addParagraphToPopUp(nextStep, message, warning) {
+    const elem = document.createElement("p");
+    elem.className = 'infoPopup';
+    if (warning) {
+        elem.className += ' warningPopup';
+    }
+    elem.innerText = message;
+    insertAfter(elem, nextStep.firstChild);
+}
+
+function insertAfter(newElement, referenceElement) {
+    referenceElement.parentNode.insertBefore(newElement, referenceElement.nextSibling);
 }
 
 function newCSVButton(){
