@@ -442,8 +442,13 @@ function addIdentifier(node){
 }
 
 function execute() {
-    console.log('execute');
-    console.log(createDataForQuery());
+    const check = checkInput();
+    if (check === true) {
+        console.log('execute');
+        console.log(createDataForQuery());
+    } else {
+        alert(check);
+    }
 }
 
 
@@ -904,6 +909,12 @@ function findIndexHeader(items, header) {
 }
 
 function checkInput(){
+    let roots = true;
+    const edgesRoot = document.getElementById('edges').children;
+    const nodesRoot = document.getElementById('nodes').children;
+    if (!edgesRoot.length && !nodesRoot.length) {
+        roots = false;
+    }
     let textFields = true;
     let inputs = document.getElementsByTagName("input");
     for (let i=0; i<inputs.length; i++){
@@ -915,12 +926,15 @@ function checkInput(){
             inputs[i].style.border ="";
         }
     }
-    let node_selects = Array.from(document.getElementsByClassName("node_select"));
+    
+    let selectFields = true;
+    let edge_selects = Array.from(document.getElementsByClassName("edge_select"));
+    let node_selects = Array.from(document.getElementsByClassName("node_select")).concat(edge_selects);
     let all_selects = Array.from(document.getElementsByClassName("property_select")).concat(node_selects);
-    for (let i=0; i<all_selects.length; i++){
+    for (let i = 0; i < all_selects.length; i++){
         if (all_selects[i].value === ""){
             all_selects[i].style.border ="2px solid #EC5B62";
-            textFields = false;
+            selectFields = false;
         } else {
             all_selects[i].style.border ="";
         }
@@ -939,10 +953,12 @@ function checkInput(){
             toid.style.border = "";
         }
     }
-    if (textFields && relIds){
+    if (roots && selectFields && textFields && relIds){
         return true;
     } else {
         let error = "The following needs corrected:";
+        if(!roots){ error = error + "\n → Fill at least 1 node or 1 edge"; }
+        if(!selectFields){ error = error + "\n → Fill all the dropdowns"; }
         if(!textFields){ error = error + "\n → Fill all the text fields"; }
         if(!relIds){ error = error + "\n → Identifier for the edges should use different columns"; }
         return error;
