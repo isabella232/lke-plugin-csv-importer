@@ -36,16 +36,17 @@ module.exports = function(options) {
                 }));
             });
             let totalSuccessful = 0, totalFailed = 0;
-            await Promise.allSettled(nodesPromise).then((results) => {
-                totalSuccessful = results.filter((promise) => promise.status === 'fulfilled' ).length;
-                totalFailed = results.length - totalSuccessful;
-            })
+            const results = await Promise.allSettled(nodesPromise);
+            totalSuccessful = results.filter((promise) => promise.status === 'fulfilled' ).length;
+            totalFailed = results.length - totalSuccessful;
+
             res.status(200);
             res.contentType('application/json');
             res.send(JSON.stringify({total: req.body.nodes.length, success: totalSuccessful, failed: totalFailed,  message: "Nodes are imported."}));
+
         } catch (e) {
             res.status(412);
-            res.send(JSON.stringify({status: 412, body: e}));
+            res.send(JSON.stringify({status: 412, body: JSON.stringify(e)}));
         }
     });
 
@@ -57,7 +58,7 @@ module.exports = function(options) {
             let edgesPromise = [];
             res.body.nodes.forEach((node) => {
                 if(!node || !node.categories || !node.properties) {
-                    throw new Error('Node parameters are invalid or missing.');
+                    throw new Error('Edge parameters are invalid or missing.');
                 }
                 edgesPromise.push(options.getRestClient(req).graphQuery.runQuery({
                     query: node.categories,
@@ -65,16 +66,15 @@ module.exports = function(options) {
                 }));
             });
             let totalSuccessful = 0, totalFailed = 0;
-            await Promise.allSettled(edgesPromise).then((results) => {
-                totalSuccessful = results.filter((promise) => promise.status === 'fulfilled' ).length;
-                totalFailed = results.length - totalSuccessful;
-            })
+            const results = await Promise.allSettled(edgesPromise);
+            totalSuccessful = results.filter((promise) => promise.status === 'fulfilled' ).length;
+            totalFailed = results.length - totalSuccessful;
             res.status(200);
             res.contentType('application/json');
             res.send(JSON.stringify({total: req.body.queries.length, success: totalSuccessful, failed: totalFailed,  message: "Edges are imported."}));
         } catch (e) {
             res.status(412);
-            res.send(JSON.stringify({status: 412, body: e}));
+            res.send(JSON.stringify({status: 412, body: JSON.stringify(e)}));
         }
     });
 };
