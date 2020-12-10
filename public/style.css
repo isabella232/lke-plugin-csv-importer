@@ -130,6 +130,10 @@ input[type="file"] {
 	margin-bottom: 4px;
 }
 
+.fileName  {
+	padding-left: 16px ;
+}
+
 #fileError {
 	color: #EC5B62;
 }

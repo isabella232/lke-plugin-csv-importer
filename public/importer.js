@@ -28,6 +28,12 @@ const basePath = basePathRegex.exec(window.location.pathname)?.groups.basePath |
 const pluginPath = basePathRegex.exec(window.location.pathname).groups.pluginPath;
 const serverURL = new URL(basePath, window.location.origin).href;
 
+function showFile() {
+    const input = document.getElementById("importFile").files[0];
+    const fileName = document.getElementById("fileName");
+    fileName.innerText = input.name;
+}
+
 function readFile(){
     const params = new URLSearchParams(window.location.search);
     sessionStorage.setItem("sourceKey", params.get("sourceKey"));

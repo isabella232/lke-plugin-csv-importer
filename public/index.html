@@ -20,7 +20,8 @@
                 <div class="fileLabel">File to import</div>
                 <div class=uploadContainer>
                     <label for="importFile" class="fileUpload">Browse file</label>
-                    <input type="file" id="importFile" name="importFile"><br>
+                    <input onchange="showFile()" type="file" id="importFile" name="importFile"><br>
+                    <p id="fileName" class="fileName "></label>
                 </div>
                 <div id="fileError"></div>
                 <div class="headersOption">
