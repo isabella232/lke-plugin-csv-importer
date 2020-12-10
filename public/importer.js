@@ -748,7 +748,7 @@ function removeNode(node){
 function removeEdge(edge){
     let edgeID = "edge-" + edge.split("-")[1];
     let element = document.getElementById(edgeID);
-    let table = element.parentElement.parentElement.parentElement.parentElement;
+    let table = element.parentElement.parentElement.parentElement;
    
     table.parentNode.removeChild(table);
     
