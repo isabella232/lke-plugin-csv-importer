@@ -10,14 +10,13 @@ let edgeProperties = [];
 let propertiesFrom = [];
 let propertiesTo = [];
 
-const nodeHTML = "<div class=\"nodeContainer\"><div class=\"labelContainer\"><div><label for=\"label\">Label</label><input type=\"hidden\" class=\"label\" placeholder=\"Type a new label\"><select onchange=\"createNewCategory(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option><option value='##category##' \">Create new category</option></select></div><button class=\"removenodebutton secondaryButton\" onclick=\"removeNode(this.id)\">Remove node</button></div><div class=\"propertyContainer\"><div>Properties</div><button class=\"propertybutton quietButton\" onclick=\"propertyButton(this.id)\">Add property</button></div></div>";
-const fromNodeHTML = "<label for=\"label\">Label </label>\n<select onchange=\"onNodeSelect(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option></select><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button>";
-const propertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"property\" placeholder=\"Property name\"><select onchange=\"createNewProperty(this.id)\" class=\"property_select label\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removepropertybutton secondaryButton\" onclick=\"removeProperty(this.id)\">Remove property</button>";
-const edgeHTML = "<label for=\"label\">Label </label>\n<input type=\"hidden\" class=\"label\" placeholder=\"label\"><select onchange=\"onEdgeSelected(this.id)\" class=\"edge_select label\"><option value='' disabled selected>Select a type</option><option value='##type##' \">Create new type</option></select><button class=\"edgepropertybutton quietButton\" onclick=\"edgePropertyButton(this.id)\">Add property</button><button class=\"removeedgebutton secondaryButton\" onclick=\"removeEdge(this.id)\">Remove edge</button><br>";
-// const edgeTableHTML = "<table><thead><th>Source node</th><th>Edge</th><th>Destination node</th></thead><tbody><tr><td class=\"fromname\"></td><td class=\"edgename\"></td><td class=\"toname\"></td></tr></tbody></table><br>"
-const edgeTableHTML = "<div><div>Source node</div><div class=\"fromname\"></div><div>Edge</div><div class=\"edgename\"></div><div>Destination node</div><div class=\"toname\"></div></div>"
-const edgePropertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"edgeproperty\" placeholder=\"property name\"><select onchange=\"createNewPropertyEdge(this.id)\" class=\"property_select label\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removeedgepropertybutton secondaryButton\" onclick=\"removeEdgeProperty(this.id)\">Remove Property</button>";
-const identifierHTML = "<label for=\"property\"><br>Idenfitier </label><select class=\"headers\"></select><label for=\"property\"> → </label><select class=\"property_select label\"><option value='' disabled selected>Select a property</option></select><button class=\"removeidentifierbutton secondaryButton\" onclick=\"removeIdentifier(this.id)\">Remove identifier</button>";
+const nodeHTML = "<div><div class=\"labelContainer\"><div><label for=\"label\" class=\"titleLabel\">Label</label><input type=\"hidden\" class=\"label\" placeholder=\"Node category\"><select onchange=\"createNewCategory(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option><option value='##category##' \">Create new category</option></select></div><button class=\"removenodebutton dangerButton\" onclick=\"removeNode(this.id)\">Remove node</button></div><div class=\"propertyContainer\"><div>Properties</div><button class=\"propertybutton quietButton\" onclick=\"propertyButton(this.id)\">Add property</button></div></div>";
+const fromNodeHTML = "<div><div><label for=\"label\" class=\"titleLabel\">Label </label>\n<select onchange=\"onNodeSelect(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option></select></div><div class=\"propertyContainer\"><div>Identifiers</div><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button></div></div>";
+const propertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"property\" placeholder=\"Property name\"><select onchange=\"createNewProperty(this.id)\" class=\"property_select label\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removepropertybutton removeButton\" onclick=\"removeProperty(this.id)\"/>";
+const edgeHTML = "<div><div class=\"labelContainer\"><div><label for=\"label\" class=\"titleLabel\">Label </label>\n<input type=\"hidden\" class=\"label\" placeholder=\"Edge type\"><select onchange=\"onEdgeSelected(this.id)\" class=\"edge_select label\"><option value='' disabled selected>Select a type</option><option value='##type##' \">Create new type</option></select></div><button class=\"removeedgebutton dangerButton\" onclick=\"removeEdge(this.id)\">Remove edge</button></div><div class=\"propertyContainer\"><div>Properties</div><button class=\"edgepropertybutton quietButton\" onclick=\"edgePropertyButton(this.id)\">Add property</button></div></div>";
+const edgeTableHTML = "<div class=\"edgeClass\"><div class=\"sourceNodeContainer\"><div class=\"sourceNodeTitle\">SOURCE NODE</div><div class=\"fromname\"></div></div><div class=\"edgeContainer\"><div class=\"edgeTitle\">EDGE</div><div class=\"edgename\"></div></div><div class=\"destinationNodeContainer\"><div class=\"destinationNodeTitle\">DESTINATION NODE</div><div class=\"toname\"></div></div></div>"
+const edgePropertyHTML = "<label for=\"headers\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><input type=\"hidden\" class=\"edgeproperty\" placeholder=\"Property name\"><select onchange=\"createNewPropertyEdge(this.id)\" class=\"property_select label\"><option value='' disabled selected>Select a property</option><option value='##property##' \">Create new property</option></select><button class=\"removeedgepropertybutton removeButton\" onclick=\"removeEdgeProperty(this.id)\"/>";
+const identifierHTML = "<label for=\"property\"></label><select class=\"headers\"></select><label for=\"property\"> → </label><select class=\"property_select label\"><option value='' disabled selected>Select a property</option></select><button class=\"removeidentifierbutton removeButton\" onclick=\"removeIdentifier(this.id)\"/>";
 const nextstepHTML = "<p class=\"popupTitle\">The file has been successfully imported</p><a href='' class=\"quietButton\">Go to Linkurious</a><button class=\"newcsvbutton primaryButton\" onclick=\"newCSVButton()\">Upload another file</button>"
 
 const basePathRegex = /(?<basePath>.*)\/plugins\/(?<pluginPath>.*?)(\/|$)/;
@@ -201,7 +200,7 @@ function addFromNode(edge){
     fromNode.setAttribute("id", "fromNode-" + nc);
     fromNode.setAttribute("propertycounter", 0);
     fromNode.innerHTML = fromNodeHTML;
-    let table = edge.parentElement.parentElement;
+    let table = edge.parentElement.parentElement.parentElement.parentElement;
     table.getElementsByClassName("fromname")[0].appendChild(fromNode);
 
     let button = fromNode.getElementsByClassName("identifierbutton")[0];
@@ -229,7 +228,7 @@ function addToNode(edge){
     toNode.setAttribute("id", "toNode-" + nc);
     toNode.setAttribute("propertycounter", 0);
     toNode.innerHTML = fromNodeHTML;
-    let table = edge.parentElement.parentElement;
+    let table = edge.parentElement.parentElement.parentElement;
     table.getElementsByClassName("toname")[0].appendChild(toNode);
 
     let button = toNode.getElementsByClassName("identifierbutton")[0];
@@ -956,7 +955,7 @@ function checkInput(){
     if (roots && selectFields && textFields && relIds){
         return true;
     } else {
-        let error = "The following needs corrected:";
+        let error = "The following needs to be corrected:";
         if(!roots){ error = error + "\n → Fill at least 1 node or 1 edge"; }
         if(!selectFields){ error = error + "\n → Fill all the dropdowns"; }
         if(!textFields){ error = error + "\n → Fill all the text fields"; }
