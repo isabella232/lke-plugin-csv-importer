@@ -9,6 +9,10 @@ let properties = [];
 let edgeProperties = [];
 let propertiesFrom = [];
 let propertiesTo = [];
+// Keep schema of nodes in the state to avoid multiple requests
+let schemaNode;
+// Keep schema of edges in the state to avoid multiple requests
+let schemaEdge;
 
 const nodeHTML = "<div class=\"nodeContainer\"><div class=\"labelContainer\"><div><label for=\"label\">Label</label><input type=\"hidden\" class=\"label\" placeholder=\"Type a new label\"><select onchange=\"createNewCategory(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option><option value='##category##' \">Create new category</option></select></div><button class=\"removenodebutton secondaryButton\" onclick=\"removeNode(this.id)\">Remove node</button></div><div class=\"propertyContainer\"><div>Properties</div><button class=\"propertybutton quietButton\" onclick=\"propertyButton(this.id)\">Add property</button></div></div>";
 const fromNodeHTML = "<label for=\"label\">Label </label>\n<select onchange=\"onNodeSelect(this.id)\" class=\"node_select label\"><option value='' disabled selected>Select a category</option></select><button class=\"identifierbutton quietButton\" onclick=\"identifierButton(this.id)\">Add identifier</button>";
@@ -53,9 +57,8 @@ function readFile(){
     }
 }
 
-function addNode(){   
-    // TODO: to be replaced by API call 
-    const nodeCategories = ['Person', 'Car'];
+async function addNode(){   
+    const nodeCategories = await getCategories('node');
     let nodes = document.getElementById("nodes");
     let nc = parseInt(nodes.getAttribute("nodecounter")) + 1;
     nodes.setAttribute("nodecounter", nc)
@@ -97,7 +100,7 @@ function fillOptionsNode(select, categories) {
 /**
  * Make the category select disappear and replace it with a text input
  */
-function createNewCategory(id) {
+async function createNewCategory(id) {
     const node = document.getElementById("node-" + id.split("-")[1]);
     const select = node.getElementsByClassName("node_select")[0];
     if (select.value === '##category##') {
@@ -106,7 +109,7 @@ function createNewCategory(id) {
         input.type = 'text';
         properties = [];
     } else if (select.value) {
-        properties = ['uid', 'first_name'];
+        properties = await getProperties(select.value, 'node');
     }
     fillProperties(node);
 }
@@ -114,7 +117,7 @@ function createNewCategory(id) {
 /**
  * When an edge type is selected
  */
-function onEdgeSelected(id) {
+async function onEdgeSelected(id) {
     const edge = document.getElementById("edge-" + id.split("-")[1]);
     const select = edge.getElementsByClassName("edge_select")[0];
     if (select.value === '##type##') {
@@ -122,8 +125,8 @@ function onEdgeSelected(id) {
         const input = edge.getElementsByClassName("label")[0];
         input.type = 'text';
         edgeProperties = [];
-    } else {
-        edgeProperties = ['uid', 'edge_property1'];
+    } else if (select.value) {
+        edgeProperties = await getProperties(select.value, 'edge');
     }
     deleteAllEdgeProperties(id);
 }
@@ -154,7 +157,7 @@ function createNewPropertyEdge(id) {
     }
 }
 
-function addEdge(){
+async function addEdge(){
     let edges = document.getElementById("edges");
     let ec = parseInt(edges.getAttribute("edgecounter")) + 1;
     edges.setAttribute("edgecounter", ec);
@@ -172,8 +175,7 @@ function addEdge(){
 
     let select = edge.getElementsByClassName("edge_select")[0];
     select.id = "typeselect-" + ec;
-    // TODO: replace by call to api
-    const edgeTypeAPI = ['type_1', 'type_2'];
+    const edgeTypeAPI = await getCategories('edge');
     fillOptionsNode(select, edgeTypeAPI);
 
     let edgename = table.getElementsByClassName("edgename")[0];
@@ -191,9 +193,8 @@ function addEdge(){
     addToNode(edge);
 }
 
-function addFromNode(edge){
-    // TODO: to be replaced by API call 
-    const nodeCategories = ['Person', 'Car'];
+async function addFromNode(edge){
+    const nodeCategories = await getCategories('node');
     let nc = edge.getAttribute("id").split("-")[1]
     let fromNode = document.createElement("div");
     edge.className = "fromNode"
@@ -219,9 +220,8 @@ function addFromNode(edge){
     fillOptionsNode(select, allCategories);
 }
 
-function addToNode(edge){
-    // TODO: to be replaced by API call 
-    const nodeCategories = ['Person', 'Car'];
+async function addToNode(edge){
+    const nodeCategories = await getCategories('node');
     let nc = edge.getAttribute("id").split("-")[1]
     let toNode = document.createElement("div");
     edge.className = "toNode"
@@ -250,11 +250,11 @@ function addToNode(edge){
 /**
  * When a node catgeory is selected (source or destination node)
  */
-function onNodeSelect(id) {
+async function onNodeSelect(id) {
     const select = document.getElementById(id);
     const nodesData = getNodesData();
     selectedCategory = nodesData.filter(node => node.name === select.value);
-    const propertiesAPI = ['uid', 'first_name'];
+    const propertiesAPI = await getProperties(select.value, 'node');
     let newProperties = [];
     if (selectedCategory.length) {
         newProperties = selectedCategory[0].properties.map(property => property.propertyName);
@@ -475,8 +475,67 @@ function makeRequest(verb = 'GET', url, body) {
     });
 }
 
-function getSchema() {
+/**
+ * Get all categories of nodes or edges
+ */
+async function getCategories(entityType) {
+    const schema = await getSchema(entityType);
+    return schema
+        .filter(category => category.access === 'write')
+        .map(category => category.itemType);
+}
 
+/**
+ * For one category of node or edge get all its properties
+ */
+async function getProperties(categoryName, entityType) {
+    const schema = await getSchema(entityType);
+    const selectedCategory = schema.find(
+        category => category.access === 'write' && category.itemType === categoryName
+    );
+    if (selectedCategory) {
+        return selectedCategory.properties.map(property => property.propertyKey);
+    }
+    return [];
+}
+
+/**
+ * set the schema for node or edge
+ * @param result
+ */
+function setSchema(result, entityType) {
+    if (result.status === 200) {
+        if (entityType === 'edge') {
+            schemaEdge = result.body.results;
+            return schemaEdge;
+        } else {
+            schemaNode = result.body.results;
+            return schemaNode;
+        }
+    } else {
+        handleError(result);
+    }
+}
+
+/**
+ * make a request to get the schema for node or edge
+ * @returns {Promise<void>}
+ */
+async function getSchema(entityType) {
+    let schema = entityType === 'edge' ? schemaEdge : schemaNode;
+    if (schema !== undefined) {
+        return schema;
+    }
+    try {
+        const result = await makeRequest(
+            'GET',
+            `api/getSchema?sourceKey=${sessionStorage.getItem("sourceKey")}&entityType=${entityType}`,
+            null
+        );
+        return setSchema(JSON.parse(result.response), entityType);
+    } catch(e) {
+        handleError(e);
+    }
 }
 
 /**
@@ -499,8 +558,7 @@ async function execute() {
             if (dataQuery.nodes.length) {
                 const resNodes = await makeRequest(
                     'POST',
-                    // `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,50ecda20
-                    `api/addNodes?sourceKey=50ecda20`,
+                    `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,
                     {
                         nodes: dataQuery.nodes
                     }

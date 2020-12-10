@@ -8,7 +8,7 @@ module.exports = function(options) {
     options.router.get('/getSchema', async (req, res) => {
         try {
             const schemaResult = await options.getRestClient(req).graphSchema.getTypesWithAccess({
-                entityType: options.configuration.entityType || 'node',
+                entityType: req.query.entityType || 'node',
                 sourceKey: req.query.sourceKey
             });
             res.status(200);
@@ -47,7 +47,7 @@ module.exports = function(options) {
 
         } catch (e) {
             res.status(412);
-            res.send(JSON.stringify({status: 412, body: JSON.stringify(e)}));
+            res.send(e.message);
         }
     });
 
@@ -57,12 +57,9 @@ module.exports = function(options) {
                 throw new Error('Payload is empty.');
             }
             let edgesPromise = [];
-            req.body.edges.forEach((edge) => {
-                if(!edge || !edge.categories || !edge.properties) {
-                    throw new Error('Edge parameters are invalid or missing.');
-                }
+            req.body.edges.forEach((query) => {
                 edgesPromise.push(options.getRestClient(req).graphQuery.runQuery({
-                    query: edge.categories,
+                    query,
                     sourceKey: req.query.sourceKey
                 }));
             });
@@ -75,7 +72,7 @@ module.exports = function(options) {
             res.send(JSON.stringify({total: req.body.edges.length, success: totalSuccessful, failed: totalFailed,  message: "Edges are imported."}));
         } catch (e) {
             res.status(412);
-            res.send(JSON.stringify({status: 412, body: JSON.stringify(e)}));
+            res.send(e.message);
         }
     });
 };
