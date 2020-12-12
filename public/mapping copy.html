@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="./util/spin.css">
+        <link rel="stylesheet" href="./util/loading-bar.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+        <script src="./util/spin.js"></script>
+        <script src="./util/loading-bar.min.js"></script>
+        <script src="importer.js"></script>
+        <meta charset="UTF-8" />
+        <base href="/">
+        <title>CSV Import</title>
+    </head>
+    <body>
+        <div class="homeContainer">
+            <div class="header">
+                <div class="title">CSV Import Plugin: Mapping</div>
+            </div>
+            <div class="content">
+                <button class="secondaryButton" id="nodebutton" onclick="addNode()">Add node</button><br/><br/>
+                <div id="nodes" nodecounter=0></div>
+                <button class="secondaryButton" id="edgebutton" onclick="addEdge()">Add edge</button><br/><br/>
+                <div id="edges" edgecounter=0></div>
+            </div>
+            <div class="actionGroup">
+                <button class="primaryButton" id="runbutton" onclick="execute()">Import</button>
+            </div>
+        </div>
+        
+    </body>
+</html> 

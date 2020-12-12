@@ -13,20 +13,10 @@
         <title>CSV Import</title>
     </head>
     <body>
-        <div class="homeContainer">
-            <div class="header">
-                <div class="title">CSV Import Plugin: Mapping</div>
-            </div>
-            <div class="content">
-                <button class="secondaryButton" id="nodebutton" onclick="addNode()">Add node</button><br/><br/>
-                <div id="nodes" nodecounter=0></div>
-                <button class="secondaryButton" id="edgebutton" onclick="addEdge()">Add edge</button><br/><br/>
-                <div id="edges" edgecounter=0></div>
-            </div>
-            <div class="actionGroup">
-                <button class="primaryButton" id="runbutton" onclick="execute()">Import</button>
-            </div>
-        </div>
-        
+        <script src="./js/utils.js"></script>
+        <script src="./app/container/container.js"></script>
+        <script src="./app/node/node.js"></script>
+        <script src="./app/toggle-select/toggle-select.js"></script>
+        <container-app></container-app>
     </body>
 </html> 
