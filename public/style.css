@@ -1,3 +1,7 @@
+.hidden {
+  display: none;
+}
+
 body {
   font-family: 'Open Sans', 'Roboto', sans-serif;
   font-size: 16px;

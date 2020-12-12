@@ -8,21 +8,29 @@ class ToggleSelectComponent extends HTMLElement {
     this.shadowRoot.appendChild(_style);
     this.shadowRoot.appendChild(_template.content.cloneNode(true));
     this.$select = this.shadowRoot.querySelector('.select');
+    this.$input = this.shadowRoot.querySelectorAll('.label')[0];
     this.$select.addEventListener('change', this._onSelect.bind(this));
-    console.log(this.options);
     this._fillOptions();
+    bus.register('checkInputs', this._checkInput.bind(this));
+  }
+
+  _checkInput() {
+    if (this.$input.type === 'text' && this.$input.value === '') {
+      this.$input.style.border = '2px solid #EC5B62';
+    } else if (this.$select.value === '') {
+      this.$select.style.border = '2px solid #EC5B62';
+    }
   }
 
   _onSelect() {
     if (this.$select.value === this.createOption) {
       this.$select.remove();
-      const input = this.shadowRoot.querySelectorAll('.label')[0];
-      input.type = 'text';
+      this.$input.type = 'text';
       properties = [];
-    } else if (this.$categorySelect.value) {
+    } else if (this.$select.value) {
       this.dispatchEvent(
         new CustomEvent('onSelect', {
-          selectedOption: this.$categorySelect.value,
+          detail: this.$select.value,
         })
       );
     }
@@ -32,13 +40,22 @@ class ToggleSelectComponent extends HTMLElement {
    * Provided a select element and a list of string it builds the html options
    */
   _fillOptions() {
-    console.log(this.$select, this.$select.lastChild);
-    this.options.forEach((option) => {
-      var opt = document.createElement('option');
-      opt.value = option;
-      opt.innerHTML = option;
-      this.$select.insertBefore(opt, this.$select.lastChild);
-    });
+    fillOptionsBefore(this.$select, this.options);
+    console.log('matching', this.matching);
+    if (this.matching) {
+      const indexColumn = this.options.findIndex(
+        (option) => option === this.matching
+      );
+      console.log(indexColumn);
+      if (indexColumn !== -1) {
+        this.$select.selectedIndex = indexColumn + 1;
+        this.dispatchEvent(
+          new CustomEvent('onSelect', {
+            detail: this.matching,
+          })
+        );
+      }
+    }
   }
 }
 
