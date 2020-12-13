@@ -19,6 +19,10 @@ class NodeComponent extends HTMLElement {
       'onSelect',
       this.buildProperties.bind(this)
     );
+    this.$toggleSelect.addEventListener(
+      'onChange',
+      (event) => (this.node.category[0] = event.detail)
+    );
 
     this.$deleteNodeButton = this.shadowRoot.querySelector('.removenodebutton');
     this.$deleteNodeButton.addEventListener('click', () => {
@@ -75,15 +79,22 @@ class NodeComponent extends HTMLElement {
       ''
     );
     for (let h = 0; h < this.headers.length; h++) {
-      this._addProperty(h);
+      this._addProperty(h, event.detail === '');
     }
   }
 
-  _addProperty(position) {
+  _addProperty(position, cannotSelect) {
+    const id = this.node.properties.length
+      ? this.node.properties[this.node.properties.length - 1].id + 1
+      : 0;
     const propertyContainer = this.shadowRoot.querySelector('.container');
     const newMapping = document.createElement('mapping-row-app');
     newMapping.addEventListener('onDelete', () => {
       newMapping.parentNode.removeChild(newMapping);
+      const indexProp = this.node.properties.findIndex(
+        (property) => property.id === id
+      );
+      this.node.properties.splice(indexProp, 1);
     });
     const columns = this.withHeaders
       ? this.headers
@@ -95,7 +106,9 @@ class NodeComponent extends HTMLElement {
     }
     newMapping.columns = columns;
     newMapping.options = this.getProperties();
+    newMapping.cannotSelect = cannotSelect;
     const property = {
+      id,
       indexColumn: position !== undefined ? position : 0,
       propertyName: '',
     };

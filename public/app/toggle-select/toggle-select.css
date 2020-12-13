@@ -113,6 +113,7 @@ select {
   display: inline-block;
   padding: 12px;
   height: 18px;
+  width: 100%;
 }
 
 input[type='file'] {

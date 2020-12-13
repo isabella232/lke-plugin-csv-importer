@@ -157,16 +157,17 @@ class ContainerComponent extends HTMLElement {
       },
     };
     this.form.edges.push(edge);
-    const newNode = document.createElement('edge-app');
-    newNode.edgeSchema = this.edgeSchema;
-    newNode.nodeSchema = this.nodeSchema;
-    newNode.edge = edge;
-    newNode.addEventListener('onDelete', () => {
-      newNode.remove();
+    const newEdge = document.createElement('edge-app');
+    newEdge.edgeSchema = this.edgeSchema;
+    newEdge.nodeSchema = this.nodeSchema;
+    newEdge.edge = edge;
+    newEdge.nodes = this.form.nodes;
+    newEdge.addEventListener('onDelete', () => {
+      newEdge.remove();
       const indexEdge = this.form.edges.findIndex((edge) => edge.id === id);
       this.form.edges.splice(indexEdge, 1);
     });
-    this.$edgesContainer.append(newNode);
+    this.$edgesContainer.append(newEdge);
   }
 
   /**

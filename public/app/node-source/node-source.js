@@ -8,10 +8,17 @@ class NodeSourceComponent extends HTMLElement {
     this.shadowRoot.appendChild(_style);
     this.shadowRoot.appendChild(_template.content.cloneNode(true));
 
+    this._setVariables();
+
     this.categories = this.getCategories();
 
     this.$select = this.shadowRoot.querySelector('.node_select');
-    fillOptions(this.$select, this.categories);
+    const allCategories = this.categories.concat(
+      this.nodes
+        .map((node) => node.category[0])
+        .filter((category) => this.categories.indexOf(category) < 0)
+    );
+    fillOptions(this.$select, allCategories);
 
     this.$select.addEventListener('change', this.buildProperties.bind(this));
 
@@ -30,6 +37,12 @@ class NodeSourceComponent extends HTMLElement {
     bus.register('checkInputs', this._checkInput.bind(this));
   }
 
+  _setVariables() {
+    if (this.title) {
+      this.shadowRoot.querySelector('.sourceNodeTitle').innerText = this.title;
+    }
+  }
+
   _checkInput() {
     if (this.$select.value === '') {
       this.$select.style.border = '2px solid #EC5B62';
@@ -39,7 +52,6 @@ class NodeSourceComponent extends HTMLElement {
   }
 
   buildProperties() {
-    console.log(this.$select, this.$select.value);
     this.$select.style.border = '';
     this.node.category[0] = this.$select.value;
     this.node.properties = [];
@@ -61,7 +73,6 @@ class NodeSourceComponent extends HTMLElement {
    * Get all categories of nodes or edges
    */
   getCategories() {
-    console.log(this.schema);
     return this.schema
       .filter((category) => category.access === 'write')
       .map((category) => category.itemType);
@@ -87,7 +98,6 @@ class NodeSourceComponent extends HTMLElement {
    * For one category of node or edge get all its properties
    */
   getPropertiesNode() {
-    console.log(this.node.category[0], this.node);
     const selectedCategory = this.schema.find(
       (category) =>
         category.access === 'write' &&
@@ -101,12 +111,37 @@ class NodeSourceComponent extends HTMLElement {
     return [];
   }
 
+  getAllProperties() {
+    const selectedCategory = this.nodes.filter(
+      (node) => node.category[0] === this.$select.value
+    );
+    let newProperties = [];
+    if (selectedCategory.length) {
+      newProperties = selectedCategory[0].properties.map(
+        (property) => property.propertyName
+      );
+    }
+    const propertiesAPI = this.getPropertiesNode();
+    return propertiesAPI.concat(
+      newProperties.filter(
+        (property) => property && propertiesAPI.indexOf(property) < 0
+      )
+    );
+  }
+
   _addProperty(position) {
+    const id = this.node.properties.length
+      ? this.node.properties[this.node.properties.length - 1].id + 1
+      : 0;
     const propertyContainer = this.shadowRoot.querySelector('.propertyParent');
-    const options = this.getPropertiesNode();
+    const options = this.getAllProperties();
     const newMapping = document.createElement('mapping-row-app');
     newMapping.addEventListener('onDelete', () => {
       newMapping.parentNode.removeChild(newMapping);
+      const indexProp = this.node.properties.findIndex(
+        (property) => property.id === id
+      );
+      this.node.properties.splice(indexProp, 1);
     });
     const columns = this.withHeaders
       ? this.headers
@@ -120,6 +155,7 @@ class NodeSourceComponent extends HTMLElement {
     newMapping.options = options;
     newMapping.cannotCreate = true;
     const property = {
+      id,
       indexColumn: position !== undefined ? position : 0,
       propertyName: '',
     };
