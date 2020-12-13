@@ -25,15 +25,138 @@ class ContainerComponent extends HTMLElement {
     this.edgeSchema = await this.getSchema('edge');
   }
 
-  _run() {
+  async _run() {
     console.log(this.form);
     const errors = this._generateErrors();
     bus.fire('checkInputs');
     if (errors.length) {
       alert(`Error:\n- ${errors.join('\n -')}`);
     } else if (this._checkData()) {
-      console.log('all good');
+      const dataQuery = this.createDataForQuery();
+      await this.makeQueries(dataQuery);
     }
+  }
+
+  async makeQueries(dataQuery) {
+    try {
+      this.startWaiting();
+      const feedback = {};
+      if (dataQuery.nodes.length) {
+        const resNodes = await makeRequest(
+          'POST',
+          `api/addNodes?sourceKey=${sessionStorage.getItem('sourceKey')}`,
+          {
+            nodes: dataQuery.nodes,
+          }
+        );
+        const data = JSON.parse(resNodes.response);
+        feedback.messageNodes = `Nodes imported: ${data.success}/${data.total}`;
+        if (data.failed) {
+          feedback.warningNodes = `Please review: ${data.failed} nodes were not imported`;
+        }
+      }
+      if (dataQuery.edges.length) {
+        const resEdges = await makeRequest(
+          'POST',
+          `api/addEdges?sourceKey=${sessionStorage.getItem('sourceKey')}`,
+          {
+            edges: dataQuery.edges,
+          }
+        );
+        const data = JSON.parse(resEdges.response);
+        feedback.messageEdges = `Edges imported: ${data.success}/${data.total}`;
+        if (data.failed) {
+          feedback.warningEdges = `Please review: ${data.failed} edges were not imported`;
+        }
+      }
+
+      stopWaitingNextStep(feedback);
+    } catch (e) {
+      handleError(e);
+    }
+  }
+
+  createDataForQuery() {
+    const nodes = [];
+    const csv = JSON.parse(sessionStorage.getItem('rows'));
+    for (let l = 0; l < csv.length; l++) {
+      let line = csv[l].split(',');
+      this.form.nodes.forEach((nodeConfig) => {
+        const properties = {};
+        nodeConfig.properties.forEach((property) => {
+          properties[property.propertyName] = line[property.indexColumn];
+        });
+        const node = {
+          categories: nodeConfig.category,
+          properties,
+        };
+        nodes.push(node);
+      });
+    }
+    const queryTemplates = this.createEdgeQuery();
+    const header = sessionStorage.getItem('headers');
+    const edges = this.createQueries(queryTemplates, csv, header);
+    return {
+      nodes,
+      edges,
+    };
+  }
+
+  createEdgeQuery() {
+    return this.form.edges.map((edge) => {
+      const fromNode = edge.from.properties
+        .map((property) => {
+          return `${property.propertyName} = ~${property.indexColumn}~ `;
+        })
+        .join(' AND f.');
+      let fromQuery = `MATCH (f:${edge.from.category[0]}) WHERE f.${fromNode}`;
+
+      const toNode = edge.to.properties
+        .map((property) => {
+          return `${property.propertyName} = ~${property.indexColumn}~ `;
+        })
+        .join(' AND f.');
+      let toQuery = `MATCH (t:${edge.to.category[0]}) WHERE f.${toNode}`;
+
+      const edgeProperties = edge.edge.properties
+        .map((property) => {
+          return `SET e.${property.propertyName} = ~${property.indexColumn}~`;
+        })
+        .join(' ');
+      let edgeQuery = `MERGE (f)-[e:${edge.edge.category[0]}]->(t) ${edgeProperties}`;
+
+      return fromQuery + toQuery + edgeQuery;
+    });
+  }
+
+  createQueries(queryTemplates, csv, header) {
+    let res = [];
+    if (header != null) {
+      for (let l = 0; l < csv.length; l++) {
+        let line = csv[l].split(',');
+        for (let q = 0; q < queryTemplates.length; q++) {
+          let qt = queryTemplates[q];
+          for (let p = 0; p < line.length; p++) {
+            let par = line[p];
+            if (par != '') {
+              if (
+                (par.startsWith('"') && par.endsWith('"')) ||
+                (par.startsWith("'") && par.endsWith("'"))
+              ) {
+                par = par.slice(1, -1);
+              }
+              par = par.replace('"', '\\"');
+              qt = qt.replace(new RegExp('~' + p + '~', 'g'), '"' + par + '"');
+            } else {
+              qt = qt.replace(new RegExp('~' + p + '~', 'g'), 'null');
+            }
+          }
+          console.log(qt);
+          res.push(qt);
+        }
+      }
+    }
+    return res;
   }
 
   _generateErrors() {
