@@ -10,12 +10,15 @@ class NodeComponent extends HTMLElement {
     this.categories = this.getCategories();
     this.$toggleSelect = this.shadowRoot.querySelector('toggle-select-app');
     this.$toggleSelect.options = this.categories;
+    this.$toggleSelect.label = 'Category';
+    this.$toggleSelect.placeholder = 'Select a category';
+    this.$toggleSelect.toggleLabel = 'Create a new category';
 
     this.selectedCategory = null;
-    this.$toggleSelect.addEventListener('onSelect', (event) => {
-      this.node.category[0] = event.detail;
-      this.buildProperties();
-    });
+    this.$toggleSelect.addEventListener(
+      'onSelect',
+      this.buildProperties.bind(this)
+    );
 
     this.$deleteNodeButton = this.shadowRoot.querySelector('.removenodebutton');
     this.$deleteNodeButton.addEventListener('click', () => {
@@ -53,7 +56,9 @@ class NodeComponent extends HTMLElement {
     return [];
   }
 
-  buildProperties() {
+  buildProperties(event) {
+    this.node.category[0] = event.detail;
+    this.node.properties = [];
     // Delete the div in case it was already created before
     const existingProperties = this.shadowRoot.querySelectorAll(
       'mapping-row-app'

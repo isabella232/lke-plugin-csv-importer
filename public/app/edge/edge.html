@@ -1,14 +1,19 @@
 <div class="edgeClass">
-    <div class="sourceNodeContainer">
-        <div class="sourceNodeTitle">SOURCE NODE</div>
-        <div class="fromname"></div>
-    </div>
+    <node-source-app></node-source-app>
     <div class="edgeContainer">
         <div class="edgeTitle">EDGE</div>
-        <div class="edgename"></div>
+        <div class="edgename">
+            <div class="propertyParent">
+                <div class="labelContainer">
+                    <toggle-select-app></toggle-select-app>
+                    <button class="removeedgebutton dangerButton">Remove edge</button>
+                </div>
+                <div class="propertyContainer">
+                    <div>Properties</div>
+                    <button class="edgepropertybutton quietButton">Add property</button>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="destinationNodeContainer">
-        <div class="destinationNodeTitle">DESTINATION NODE</div>
-        <div class="toname"></div>
-    </div>
+    <node-source-app></node-source-app>
 </div>

@@ -161,6 +161,7 @@ input[type='checkbox'] {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .propertyContainer {
@@ -216,6 +217,10 @@ input[type='checkbox'] {
   background-color: #f4f4f4;
   padding: 16px 28px 16px 12px;
   border-radius: 8px;
+}
+
+.hidden {
+  display: none;
 }
 
 .headers {

@@ -9,7 +9,12 @@ class ContainerComponent extends HTMLElement {
     this.shadowRoot.appendChild(_template.content.cloneNode(true));
     this.$nodeButton = this.shadowRoot.querySelector('#nodebutton');
     this.$nodesContainer = this.shadowRoot.querySelector('#nodes');
+    this.$edgesContainer = this.shadowRoot.querySelector('#edges');
     this.$nodeButton.addEventListener('click', this._addNode.bind(this));
+
+    this.$edgeButton = this.shadowRoot.querySelector('#edgebutton');
+    this.$edgeButton.addEventListener('click', this._addEdge.bind(this));
+
     this.$runButton = this.shadowRoot.querySelector('#runbutton');
     this.$runButton.addEventListener('click', this._run.bind(this));
     this.form = {
@@ -23,11 +28,10 @@ class ContainerComponent extends HTMLElement {
   _run() {
     console.log(this.form);
     const errors = this._generateErrors();
+    bus.fire('checkInputs');
     if (errors.length) {
       alert(`Error:\n- ${errors.join('\n -')}`);
-    } else if (!this._checkData()) {
-      bus.fire('checkInputs');
-    } else {
+    } else if (this._checkData()) {
       console.log('all good');
     }
   }
@@ -49,12 +53,28 @@ class ContainerComponent extends HTMLElement {
   }
 
   _checkData() {
+    console.log(
+      this.form.nodes.every(this._checkValidNode) &&
+        this.form.edges.every((edge) => {
+          return (
+            this._checkValidNode(edge.from) &&
+            this._checkValidNode(edge.to) &&
+            this._checkValidNode(edge.edge) &&
+            edge.from.properties
+              .map((property) => property.indexColumn)
+              .join('') !==
+              edge.to.properties
+                .map((property) => property.indexColumn)
+                .join('')
+          );
+        })
+    );
     return (
       this.form.nodes.every(this._checkValidNode) &&
       this.form.edges.every((edge) => {
         return (
           this._checkValidNode(edge.from) &&
-          this._checkValidNode(edge.from) &&
+          this._checkValidNode(edge.to) &&
           this._checkValidNode(edge.edge) &&
           edge.from.properties
             .map((property) => property.indexColumn)
@@ -68,17 +88,27 @@ class ContainerComponent extends HTMLElement {
   _checkSameIdentifiers() {
     return this.form.edges.some((edge) => {
       return (
+        edge.from.properties.length &&
+        edge.to.properties.length &&
         edge.from.properties
           .map((property) => property.indexColumn)
-          .join('') !==
-        edge.to.properties.map((property) => property.indexColumn).join('')
+          .join('') ===
+          edge.to.properties.map((property) => property.indexColumn).join('')
       );
     });
   }
 
   _checkValidNode(node) {
+    console.log(
+      node,
+      !!node.category[0] &&
+        node.properties.every(
+          (property) =>
+            property.indexColumn !== undefined && property.propertyName
+        )
+    );
     return (
-      node.category[0] &&
+      !!node.category[0] &&
       node.properties.every(
         (property) =>
           property.indexColumn !== undefined && property.propertyName
@@ -105,6 +135,38 @@ class ContainerComponent extends HTMLElement {
       this.form.nodes.splice(indexNode, 1);
     });
     this.$nodesContainer.append(newNode);
+  }
+
+  async _addEdge() {
+    const id = this.form.edges.length
+      ? this.form.edges[this.form.edges.length - 1].id + 1
+      : 0;
+    const edge = {
+      id,
+      from: {
+        category: [''],
+        properties: [],
+      },
+      to: {
+        category: [''],
+        properties: [],
+      },
+      edge: {
+        category: [''],
+        properties: [],
+      },
+    };
+    this.form.edges.push(edge);
+    const newNode = document.createElement('edge-app');
+    newNode.edgeSchema = this.edgeSchema;
+    newNode.nodeSchema = this.nodeSchema;
+    newNode.edge = edge;
+    newNode.addEventListener('onDelete', () => {
+      newNode.remove();
+      const indexEdge = this.form.edges.findIndex((edge) => edge.id === id);
+      this.form.edges.splice(indexEdge, 1);
+    });
+    this.$edgesContainer.append(newNode);
   }
 
   /**

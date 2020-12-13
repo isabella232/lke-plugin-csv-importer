@@ -11,14 +11,16 @@ class MappingRowComponent extends HTMLElement {
     const toggleSelect = this.shadowRoot.querySelector('toggle-select-app');
     toggleSelect.options = this.options;
     toggleSelect.matching = this.columns[this.position];
-    toggleSelect.value;
+    toggleSelect.cannotCreate = this.cannotCreate;
     this.$button = this.shadowRoot.querySelector('button');
     this.$button.addEventListener('click', this._onDelete.bind(this));
     this.$select = this.shadowRoot.querySelector('.headers');
-    this.$select.addEventListener('onchange', () => {
-      this.property.indexColumn = select.selectedIndex;
+    this.$select.addEventListener('change', () => {
+      console.log(this.$select.selectedIndex, this.property);
+      this.property.indexColumn = this.$select.selectedIndex;
     });
     toggleSelect.addEventListener('onSelect', (event) => {
+      console.log(event.detail, this.property);
       this.property.propertyName = event.detail;
     });
     bus.register('checkInputs', this._checkInput.bind(this));
