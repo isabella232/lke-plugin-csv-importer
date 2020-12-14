@@ -1,8 +1,8 @@
 class EdgeComponent extends HTMLElement {
   async connectedCallback() {
     await bootupComponent.call(this, {
-      template: './app/edge/edge.html',
-      style: './app/edge/edge.css',
+      template: './app/container/components/edge/edge.html',
+      style: './app/container/components/edge/edge.css',
     });
 
     this._setNodeVariables();

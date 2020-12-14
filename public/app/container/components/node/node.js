@@ -1,8 +1,8 @@
 class NodeComponent extends HTMLElement {
   async connectedCallback() {
     await bootupComponent.call(this, {
-      template: './app/node/node.html',
-      style: './app/node/node.css',
+      template: './app/container/components/node/node.html',
+      style: './app/container/components/node/node.css',
     });
 
     this.categories = this.getCategories();

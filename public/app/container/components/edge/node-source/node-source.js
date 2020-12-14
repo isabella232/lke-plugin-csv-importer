@@ -1,8 +1,8 @@
 class NodeSourceComponent extends HTMLElement {
   async connectedCallback() {
     await bootupComponent.call(this, {
-      template: './app/node-source/node-source.html',
-      style: './app/node-source/node-source.css',
+      template: './app/container/components/edge/node-source/node-source.html',
+      style: './app/container/components/edge/node-source/node-source.css',
     });
 
     this._setVariables();

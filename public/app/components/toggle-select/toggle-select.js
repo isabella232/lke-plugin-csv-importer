@@ -1,8 +1,8 @@
 class ToggleSelectComponent extends HTMLElement {
   async connectedCallback() {
     await bootupComponent.call(this, {
-      template: './app/toggle-select/toggle-select.html',
-      style: './app/toggle-select/toggle-select.css',
+      template: './app/components/toggle-select/toggle-select.html',
+      style: './app/components/toggle-select/toggle-select.css',
     });
 
     this.$select = this.shadowRoot.querySelector('.select');

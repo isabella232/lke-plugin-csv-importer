@@ -1,8 +1,8 @@
 class MappingRowComponent extends HTMLElement {
   async connectedCallback() {
     await bootupComponent.call(this, {
-      template: './app/mapping-row/mapping-row.html',
-      style: './app/mapping-row/mapping-row.css',
+      template: './app/components/mapping-row/mapping-row.html',
+      style: './app/components/mapping-row/mapping-row.css',
     });
 
     const toggleSelect = this.shadowRoot.querySelector('toggle-select-app');
