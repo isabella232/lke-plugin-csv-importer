@@ -5,16 +5,9 @@ class ContainerComponent extends HTMLElement {
       style: './app/container/container.css',
     });
 
-    this.$nodeButton = this.shadowRoot.querySelector('#nodebutton');
-    this.$nodesContainer = this.shadowRoot.querySelector('#nodes');
-    this.$edgesContainer = this.shadowRoot.querySelector('#edges');
-    this.$nodeButton.addEventListener('click', this._addNode.bind(this));
+    this._createElementReferences();
+    this._createEventListeners();
 
-    this.$edgeButton = this.shadowRoot.querySelector('#edgebutton');
-    this.$edgeButton.addEventListener('click', this._addEdge.bind(this));
-
-    this.$runButton = this.shadowRoot.querySelector('#runbutton');
-    this.$runButton.addEventListener('click', this._run.bind(this));
     this.form = {
       nodes: [],
       edges: [],
@@ -23,18 +16,39 @@ class ContainerComponent extends HTMLElement {
     this.edgeSchema = await this.getSchema('edge');
   }
 
+  _createElementReferences() {
+    this.$nodeButton = this.shadowRoot.querySelector('#nodebutton');
+    this.$nodesContainer = this.shadowRoot.querySelector('#nodes');
+    this.$edgesContainer = this.shadowRoot.querySelector('#edges');
+    this.$edgeButton = this.shadowRoot.querySelector('#edgebutton');
+    this.$runButton = this.shadowRoot.querySelector('#runbutton');
+  }
+
+  _createEventListeners() {
+    this.$nodeButton.addEventListener('click', this._addNode.bind(this));
+    this.$edgeButton.addEventListener('click', this._addEdge.bind(this));
+    this.$runButton.addEventListener('click', this._run.bind(this));
+  }
+
+  /**
+   * Action when the import button is clicked by the user
+   * Send data to backend to create nodes/edges
+   */
   async _run() {
     const errors = this._generateErrors();
     bus.fire('checkInputs');
     if (errors.length) {
       alert(`Error:\n- ${errors.join('\n -')}`);
     } else if (this._checkData()) {
-      const dataQuery = this.createDataForQuery();
-      await this.makeQueries(dataQuery);
+      const dataQuery = this._createDataForQuery();
+      await this._makeQueries(dataQuery);
     }
   }
 
-  async makeQueries(dataQuery) {
+  /**
+   * Makes queries and create feedback to the user
+   */
+  async _makeQueries(dataQuery) {
     try {
       startWaiting();
       const feedback = {};
@@ -73,7 +87,10 @@ class ContainerComponent extends HTMLElement {
     }
   }
 
-  createDataForQuery() {
+  /**
+   * From the config/mapping made by the user, create the data that will sent to the backend
+   */
+  _createDataForQuery() {
     const nodes = [];
     const csv = JSON.parse(sessionStorage.getItem('rows'));
     for (let l = 0; l < csv.length; l++) {
@@ -90,16 +107,19 @@ class ContainerComponent extends HTMLElement {
         nodes.push(node);
       });
     }
-    const queryTemplates = this.createEdgeQuery();
+    const queryTemplates = this._createEdgeQuery();
     const header = sessionStorage.getItem('headers');
-    const edges = this.createQueries(queryTemplates, csv, header);
+    const edges = this._createQueries(queryTemplates, csv, header);
     return {
       nodes,
       edges,
     };
   }
 
-  createEdgeQuery() {
+  /**
+   * From the edge config create query templates
+   */
+  _createEdgeQuery() {
     return this.form.edges.map((edge) => {
       const fromNode = edge.from.properties
         .map((property) => {
@@ -126,7 +146,10 @@ class ContainerComponent extends HTMLElement {
     });
   }
 
-  createQueries(queryTemplates, csv, header) {
+  /**
+   * Using query templates and data from the csv file, return a list of queries to be ran
+   */
+  _createQueries(queryTemplates, csv, header) {
     let res = [];
     if (header != null) {
       for (let l = 0; l < csv.length; l++) {
@@ -156,6 +179,10 @@ class ContainerComponent extends HTMLElement {
     return res;
   }
 
+  /**
+   * Create visual feedback to the user that cannot be made clear on the input fields
+   * Show alert with error(s)
+   */
   _generateErrors() {
     const errors = [];
     if (!this.form.nodes.length && !this.form.edges.length) {
@@ -172,6 +199,9 @@ class ContainerComponent extends HTMLElement {
     return errors;
   }
 
+  /**
+   * Check the data retrieved from the user before sending to backend
+   */
   _checkData() {
     console.log(
       this.form.nodes.every(this._checkValidNode) &&
@@ -205,6 +235,9 @@ class ContainerComponent extends HTMLElement {
     );
   }
 
+  /**
+   * Check if from and to node have the same identifier (error)
+   */
   _checkSameIdentifiers() {
     return this.form.edges.some((edge) => {
       return (
@@ -218,6 +251,9 @@ class ContainerComponent extends HTMLElement {
     });
   }
 
+  /**
+   * Check that a node (node, from, to, edge => all have the same structure) is valid
+   */
   _checkValidNode(node) {
     console.log(
       node,
@@ -236,6 +272,9 @@ class ContainerComponent extends HTMLElement {
     );
   }
 
+  /**
+   * Adds a node to the UI
+   */
   async _addNode() {
     const id = this.form.nodes.length
       ? this.form.nodes[this.form.nodes.length - 1].id + 1
@@ -257,6 +296,9 @@ class ContainerComponent extends HTMLElement {
     this.$nodesContainer.append(newNode);
   }
 
+  /**
+   * Adds an edge to the UI
+   */
   async _addEdge() {
     const id = this.form.edges.length
       ? this.form.edges[this.form.edges.length - 1].id + 1
