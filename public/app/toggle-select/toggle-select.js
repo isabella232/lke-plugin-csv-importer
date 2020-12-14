@@ -1,12 +1,9 @@
 class ToggleSelectComponent extends HTMLElement {
   async connectedCallback() {
-    const _template = document.createElement('template');
-    const _style = document.createElement('style');
-    await importFile(_template, './app/toggle-select/toggle-select.html');
-    await importFile(_style, './app/toggle-select/toggle-select.css');
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(_style);
-    this.shadowRoot.appendChild(_template.content.cloneNode(true));
+    await bootupComponent.call(this, {
+      template: './app/toggle-select/toggle-select.html',
+      style: './app/toggle-select/toggle-select.css',
+    });
 
     this.$select = this.shadowRoot.querySelector('.select');
     this.$input = this.shadowRoot.querySelectorAll('.label')[0];

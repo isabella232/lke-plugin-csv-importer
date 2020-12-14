@@ -1,12 +1,10 @@
 class ContainerComponent extends HTMLElement {
   async connectedCallback() {
-    const _template = document.createElement('template');
-    const _style = document.createElement('style');
-    await importFile(_template, './app/container/container.html');
-    await importFile(_style, './app/container/container.css');
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(_style);
-    this.shadowRoot.appendChild(_template.content.cloneNode(true));
+    await bootupComponent.call(this, {
+      template: './app/container/container.html',
+      style: './app/container/container.css',
+    });
+
     this.$nodeButton = this.shadowRoot.querySelector('#nodebutton');
     this.$nodesContainer = this.shadowRoot.querySelector('#nodes');
     this.$edgesContainer = this.shadowRoot.querySelector('#edges');

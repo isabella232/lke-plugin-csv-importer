@@ -1,12 +1,9 @@
 class MappingRowComponent extends HTMLElement {
   async connectedCallback() {
-    const _template = document.createElement('template');
-    const _style = document.createElement('style');
-    await importFile(_template, './app/mapping-row/mapping-row.html');
-    await importFile(_style, './app/mapping-row/mapping-row.css');
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(_style);
-    this.shadowRoot.appendChild(_template.content.cloneNode(true));
+    await bootupComponent.call(this, {
+      template: './app/mapping-row/mapping-row.html',
+      style: './app/mapping-row/mapping-row.css',
+    });
 
     const toggleSelect = this.shadowRoot.querySelector('toggle-select-app');
     toggleSelect.options = this.options;

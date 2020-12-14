@@ -1,12 +1,10 @@
 class NodeComponent extends HTMLElement {
   async connectedCallback() {
-    const _template = document.createElement('template');
-    const _style = document.createElement('style');
-    await importFile(_template, './app/node/node.html');
-    await importFile(_style, './app/node/node.css');
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(_style);
-    this.shadowRoot.appendChild(_template.content.cloneNode(true));
+    await bootupComponent.call(this, {
+      template: './app/node/node.html',
+      style: './app/node/node.css',
+    });
+
     this.categories = this.getCategories();
     this.$toggleSelect = this.shadowRoot.querySelector('toggle-select-app');
     this.$toggleSelect.options = this.categories;

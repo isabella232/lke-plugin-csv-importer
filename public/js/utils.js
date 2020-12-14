@@ -15,6 +15,16 @@ function importFile(_template, url) {
   });
 }
 
+async function bootupComponent(files) {
+  const _template = document.createElement('template');
+  const _style = document.createElement('style');
+  await importFile(_template, files.template);
+  await importFile(_style, files.style);
+  this.attachShadow({ mode: 'open' });
+  this.shadowRoot.appendChild(_style);
+  this.shadowRoot.appendChild(_template.content.cloneNode(true));
+}
+
 function fillOptions(select, options) {
   options.forEach((option) => {
     var opt = document.createElement('option');

@@ -1,12 +1,9 @@
 class EdgeComponent extends HTMLElement {
   async connectedCallback() {
-    const _template = document.createElement('template');
-    const _style = document.createElement('style');
-    await importFile(_template, './app/edge/edge.html');
-    await importFile(_style, './app/edge/edge.css');
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(_style);
-    this.shadowRoot.appendChild(_template.content.cloneNode(true));
+    await bootupComponent.call(this, {
+      template: './app/edge/edge.html',
+      style: './app/edge/edge.css',
+    });
 
     this._setNodeVariables();
 
