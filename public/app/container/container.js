@@ -26,7 +26,6 @@ class ContainerComponent extends HTMLElement {
   }
 
   async _run() {
-    console.log(this.form);
     const errors = this._generateErrors();
     bus.fire('checkInputs');
     if (errors.length) {
@@ -39,7 +38,7 @@ class ContainerComponent extends HTMLElement {
 
   async makeQueries(dataQuery) {
     try {
-      this.startWaiting();
+      startWaiting();
       const feedback = {};
       if (dataQuery.nodes.length) {
         const resNodes = await makeRequest(

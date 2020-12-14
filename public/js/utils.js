@@ -50,3 +50,41 @@ class EventBus {
   }
 }
 const bus = new EventBus();
+
+/**
+ * make XMLHttpRequest
+ * @param verb : string  default value 'GET'
+ * @param url : string   API end point
+ * @param body : Object
+ * @returns {Promise<any>}
+ */
+function makeRequest(verb = 'GET', url, body) {
+  const xmlHttp = new XMLHttpRequest();
+  return new Promise((resolve, reject) => {
+    xmlHttp.onreadystatechange = () => {
+      // Only run if the request is complete
+      if (xmlHttp.readyState !== 4) {
+        return;
+      }
+      // Process the response
+      if (xmlHttp.status >= 200 && xmlHttp.status < 300) {
+        // If successful
+        resolve(xmlHttp);
+      } else {
+        const message =
+          typeof xmlHttp.response === 'string'
+            ? xmlHttp.response
+            : JSON.parse(xmlHttp.response).body.error;
+        // If failed
+        reject({
+          status: xmlHttp.status,
+          statusText: xmlHttp.statusText,
+          body: message,
+        });
+      }
+    };
+    xmlHttp.open(verb, url);
+    xmlHttp.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    xmlHttp.send(JSON.stringify(body));
+  });
+}
