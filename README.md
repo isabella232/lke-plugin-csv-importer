@@ -69,7 +69,7 @@ Otherwise, go to step 6
     ```
 
 6. On the `Plugin settings` field, add an new empty line before the last `}`, add in this line a comma (`,`) and, after the comma, paste the following code:
-    
+
     ```json
     "importer": {
         "basePath": "importer"
