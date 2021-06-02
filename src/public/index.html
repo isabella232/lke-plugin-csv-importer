@@ -16,107 +16,129 @@
 </head>
 
 <body>
-    <div class="header">
-        <div class="title">CSV Import Plugin</div>
+<div class="header">
+    <div class="title">CSV Import Plugin</div>
+</div>
+<div id="cardsContainer">
+    <div id="homeContainer" class="card">
+        <div class="content">
+            <div class="titleCard">Choose a file to import</div>
+            <div class=uploadContainer>
+                <label for="importFile" class="fileUpload">Browse file</label>
+                <input type="file" id="importFile" name="importFile"><br>
+                <p id="fileName" class="fileName "></p>
+                <div id="fileError"></div>
+            </div>
+        </div>
+        <button id="readButton" class="primaryButton">Upload</button>
+        <button id="showExampleButton" class="link-button">
+            How to structure my file
+        </button>
     </div>
-    <div id="cardsContainer">
-        <div id="homeContainer">
-            <div class="content">
-                <div class="titleCard">Choose a file to import</div>
-                <div class=uploadContainer>
-                    <label for="importFile" class="fileUpload">Browse file</label>
-                    <input type="file" id="importFile" name="importFile"><br>
-                    <p id="fileName" class="fileName "> </p>
-                    <div id="fileError"></div>
-                </div>
+    <div id="fileStructureExampleContainer" class="card">
+        <div class="content">
+            <div class="titleCard">Anatomy of a CSV File</div>
+            <div class="secondary-title">Understand the structure of a node and an edge file</div>
+            <div class="tab">
+                <button id="showNodeExampleButton" class="link-button">
+                    Nodes
+                </button>
+                <button id="showEdgeExampleButton" class="link-button">
+                    Edges
+                </button>
             </div>
-            <button id="readButton" class="primaryButton">Upload</button>
-        </div>
-        <div id="pickEntityContainer">
-            <div class="content">
-                <div class="titleCard">Which entity does the file contain?</div>
-                <div class="radioButtons">
-                    <div>
-                        <input type="radio" name="entities" id="nodes" value="nodes">
-                        <label for="nodes">Nodes</label>
-                    </div>
-                    <div>
-                        <input type="radio" name="entities" id="edges" value="edges">
-                        <label for="edges">Edges</label>
-                    </div>
-                </div>
+            <div class="example-image">
+                <img id="exampleImage" src="./assets/img/node.png" alt="CSV file structure example" width="651" height="413">
             </div>
-            <div class="buttonSpaceBetween">
-                <button class="quietButton resetPluginAction">Cancel</button>
-                <div class="actionGroup">
-                    <button id="previousButtonEntity" class="quietButton">Previous</button>
-                    <button id="nextButtonEntity" class="primaryButton" disabled>Next</button>
-                </div>
+            <div class="container_flex-end">
+                <button id="exitExampleButton" class="primaryButton">Got it</button>
             </div>
-        </div>
-        <div id="entityNameContainer">
-            <div class="content">
-                <div class="titleCard"></div>
-                <div id="nameCat" class="largeInfo"></div>
-            </div>
-            <div class="buttonSpaceBetween">
-                <button class="quietButton resetPluginAction">Cancel</button>
-                <div class="actionGroup">
-                    <button id="previousButtonCat" class="quietButton">Previous</button>
-                    <button id="nextButtonCat" class="primaryButton">That looks good</button>
-                </div>
-            </div>
-        </div>
-        <div id="entityPropsContainer">
-            <div class="content">
-                <div class="titleCard"></div>
-                <div id="nameProps"></div>
-            </div>
-            <div class="buttonSpaceBetween">
-                <button class="quietButton resetPluginAction">Cancel</button>
-                <div class="actionGroup">
-                    <button id="previousButtonProps" class="quietButton">Previous</button>
-                    <button id="nextButtonProps" class="primaryButton"></button>
-                </div>
-            </div>
-            
-        </div>
-        <div id="edgeMappingContainer">
-            <div class="nodeMapper">
-                <div>
-                    <div class="titleCard">What is the <strong>source node</strong> category?</div>
-                    <input class="mapInput" type="text" placeholder="Source node category">
-                </div>
-                <div>
-                    <div class="titleCard">What is the <strong>destination node</strong> category?</div>
-                    <input class="mapInput" type="text" placeholder="Destination node category">
-                </div>
-            </div>
-            <div class="buttonSpaceBetween">
-                <button class="quietButton resetPluginAction">Cancel</button>
-                <div class="actionGroup">
-                    <button id="previousButtonEdge" class="quietButton">Previous</button>
-                    <button id="importButtonEdge" class="primaryButton">Import</button>
-                </div>
-            </div>
-            
-        </div>
-        <div id="nextstep">
-            <p class="popupTitle">
-                Import successful
-            </p>
-            <div class="importFeedback"></div>
-            <div class="buttonSpaceBetween">
-                <button id="goBackLinkurious" class="quietButton">Go back to Linkurious</button>
-                <div class="actionGroup">
-                    <button id="newFileButton" class="newcsvbutton primaryButton">Upload a new file</button>
-                </div>
-            </div>
-            
         </div>
     </div>
-    
-    
+
+    <div id="pickEntityContainer" class="card">
+        <div class="content">
+            <div class="titleCard">Which entity does the file contain?</div>
+            <div class="radioButtons">
+                <div>
+                    <input type="radio" name="entities" id="nodes" value="nodes">
+                    <label for="nodes">Nodes</label>
+                </div>
+                <div>
+                    <input type="radio" name="entities" id="edges" value="edges">
+                    <label for="edges">Edges</label>
+                </div>
+            </div>
+        </div>
+        <div class="buttonSpaceBetween">
+            <button class="quietButton resetPluginAction">Cancel</button>
+            <div class="actionGroup">
+                <button id="previousButtonEntity" class="quietButton">Previous</button>
+                <button id="nextButtonEntity" class="primaryButton" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+    <div id="entityNameContainer" class="card">
+        <div class="content">
+            <div class="titleCard"></div>
+            <div id="nameCat" class="largeInfo"></div>
+        </div>
+        <div class="buttonSpaceBetween">
+            <button class="quietButton resetPluginAction">Cancel</button>
+            <div class="actionGroup">
+                <button id="previousButtonCat" class="quietButton">Previous</button>
+                <button id="nextButtonCat" class="primaryButton">That looks good</button>
+            </div>
+        </div>
+    </div>
+    <div id="entityPropsContainer" class="card">
+        <div class="content">
+            <div class="titleCard"></div>
+            <div id="nameProps"></div>
+        </div>
+        <div class="buttonSpaceBetween">
+            <button class="quietButton resetPluginAction">Cancel</button>
+            <div class="actionGroup">
+                <button id="previousButtonProps" class="quietButton">Previous</button>
+                <button id="nextButtonProps" class="primaryButton"></button>
+            </div>
+        </div>
+
+    </div>
+    <div id="edgeMappingContainer" class="card">
+        <div class="nodeMapper">
+            <div>
+                <div class="titleCard">What is the <strong>source node</strong> category?</div>
+                <input class="mapInput" type="text" placeholder="Source node category">
+            </div>
+            <div>
+                <div class="titleCard">What is the <strong>destination node</strong> category?</div>
+                <input class="mapInput" type="text" placeholder="Destination node category">
+            </div>
+        </div>
+        <div class="buttonSpaceBetween">
+            <button class="quietButton resetPluginAction">Cancel</button>
+            <div class="actionGroup">
+                <button id="previousButtonEdge" class="quietButton">Previous</button>
+                <button id="importButtonEdge" class="primaryButton">Import</button>
+            </div>
+        </div>
+
+    </div>
+    <div id="nextstep" class="card">
+        <p class="popupTitle">
+            Import successful
+        </p>
+        <div class="importFeedback"></div>
+        <div class="buttonSpaceBetween">
+            <button id="goBackLinkurious" class="quietButton">Go back to Linkurious</button>
+            <div class="actionGroup">
+                <button id="newFileButton" class="newcsvbutton primaryButton">Upload a new file</button>
+            </div>
+        </div>
+
+    </div>
+</div>
 
 
 <!--------------------Script-------------------->
