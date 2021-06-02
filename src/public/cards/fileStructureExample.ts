@@ -21,6 +21,8 @@ export class CSVFileStructureExample {
 
   hideCard() {
     this.container.style.display = "none";
+    this.showNodesButton.classList.remove('under-line');
+    this.showEdgesButton.classList.remove('under-line');
   }
 
   showCard() {
