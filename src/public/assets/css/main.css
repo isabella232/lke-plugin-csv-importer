@@ -1,3 +1,12 @@
+/* "Open Sans" */
+@font-face {
+    font-family: "Open Sans";
+    font-style: normal;
+    font-weight: 400;
+    src: url('./../fonts/OpenSans-Regular.ttf') format('truetype');
+}
+
+
 body {
     font-family: 'Open Sans', 'Roboto', sans-serif;
     font-size: 16px;
@@ -64,6 +73,7 @@ a {
 }
 
 .secondary-title {
+    font-family: "Open Sans", sans-serif;
     font-weight: 400;
     font-size: 1rem;
     padding-top: .25rem;
