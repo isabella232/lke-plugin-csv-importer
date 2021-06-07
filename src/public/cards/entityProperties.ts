@@ -80,35 +80,25 @@ export class CSVEntityProperties {
   async importNodes(): Promise<string> {
     utils.startWaiting();
     try {
-      const rows = sessionStorage.getItem("rows");
-      const headers = sessionStorage.getItem("headers");
-      const categoryName = sessionStorage.getItem("entityName");
-      if (rows && headers && categoryName) {
-        const rowsParsed = JSON.parse(rows);
-        const headersParsed = headers.split(",");
-        const nodes = rowsParsed.map((row: any) => {
-          const rowParsed = row.split(",");
-          return {
-            categories: [categoryName],
-            properties: headersParsed.reduce((allProperties, header, index) => {
-              return {
-                ...allProperties,
-                [header]: rowParsed[index],
-              };
-            }, {}),
-          };
-        });
-        const resNodes = await utils.makeRequest(
-          "POST",
-          `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,
-          {
-            nodes: nodes,
-          }
-        );
-        const data = JSON.parse(resNodes.response);
-        return `${data.success}/${data.total} nodes have been added to the database`;
-      }
-      return "";
+      const stringRows = sessionStorage.getItem("rows")!;
+      const stringHeaders = sessionStorage.getItem("headers")!;
+      const categoryName = sessionStorage.getItem("entityName")!;
+      const rows: string[] = JSON.parse(stringRows);
+      const headers: string[] = stringHeaders.split(",");
+
+      const resNodes = await utils.makeRequest(
+        "POST",
+        `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,
+        {
+          category: categoryName,
+          headers: headers,
+          rows: rows
+        }
+      );
+
+      const data = JSON.parse(resNodes.response);
+      console.log({data});
+      return `${data.success}/${data.total} nodes have been added to the database`;
     } catch (error) {
       throw new Error("Import has failed");
     } finally {

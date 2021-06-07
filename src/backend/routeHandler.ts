@@ -21,35 +21,63 @@ export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): vo
   });
 
   options.router.post('/addNodes', async (req, res) => {
-      try {
-          if(!req.body || !req.body.nodes || !Array.isArray(req.body.nodes)) {
-              throw new Error('Payload is empty.');
-          }
-          let nodesPromise: Promise<any>[] = [];
-          req.body.nodes.forEach((node: any) => {
-              if(!node || !node.categories || !node.properties) {
-                  throw new Error('Node parameters are invalid or missing.');
-              }
-              nodesPromise.push(options.getRestClient(req).graphNode.createNode({
-                  categories: node.categories,
-                  properties: node.properties,
-                  sourceKey: req.query.sourceKey as string
-              }));
-          });
-          const results = await Promise.all(nodesPromise);
-          // TODO:  add way to check if node was actually added
-          const totalSuccessful = results.length;
-          const totalFailed = results.length - totalSuccessful;
+    const rc = options.getRestClient(req);
+    try {
 
-          res.status(200);
-          res.contentType('application/json');
-          res.send(JSON.stringify({total: req.body.nodes.length, success: totalSuccessful, failed: totalFailed,  message: "Nodes are imported."}));
-
-      } catch (e) {
-          res.status(412);
-          // TODO: re-work error management for the plugin
-          res.send(JSON.stringify(e, Object.getOwnPropertyNames(e)));
+      if(!req.body || !req.body.headers || !Array.isArray(req.body.headers)
+        || !req.body.rows || !Array.isArray(req.body.rows)
+        || !req.body.category || typeof req.body.category !== 'string'
+        || !req.query || !req.query.sourceKey) {
+        res.status(400).json({ // TODO there are more left to check but we can live without it
+          message: 'Invalid parameters'
+        });
+        return;
       }
+      const sourceKey = req.query.sourceKey as string;
+      const headers: string[] = req.body.headers;
+      const rows: string[] = req.body.rows;
+      const category: string = req.body.category;
+
+      const failedRows = [];
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const fields = row.split(","); // TODO it should support `;` too
+        if (fields.length !== headers.length) {
+          failedRows.push([i + 1, 'Provided values do not match provided headers']);
+          continue;
+        }
+        let response;
+        const properties: Record<string, string> = {};
+        fields.forEach((field, j) => {
+          properties[headers[j]] = field;
+        });
+        try {
+          response = await rc.graphNode.createNode({
+            categories: [category],
+            properties: properties,
+            sourceKey: sourceKey
+          });
+          if (!response.isSuccess()) {
+            failedRows.push([i + 1, response.body.message]);
+          }
+        } catch (e) {
+          failedRows.push([i + 1, e.message]);
+        }
+      }
+      const totalFailed = failedRows.length;
+      const totalSuccessful = req.body.nodes.length - totalFailed;
+
+      res.status(200);
+      res.contentType('application/json');
+      res.send(JSON.stringify({
+        total: req.body.nodes.length,
+        success: totalSuccessful,
+        failed: failedRows
+      }));
+
+    } catch (e) {
+      res.status(500).json(e);
+    }
   });
 
   options.router.post('/addEdges', async (req, res) => {
