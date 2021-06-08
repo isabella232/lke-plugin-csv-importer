@@ -8,6 +8,8 @@ import {
 } from "./cards";
 import { EntitiesTypes } from "./models";
 import * as utils from "./utils";
+import {CSVFileStructureExample} from "./cards/fileStructureExample";
+import {EntityType} from "@linkurious/rest-client";
 
 function main() {
 
@@ -15,6 +17,9 @@ function main() {
 
   const uploader = new CSVUploader();
   uploader.init();
+
+  const csvFileStructureExample = new CSVFileStructureExample();
+  csvFileStructureExample.init();
 
   const entityPicker = new CSVEntityPicker();
   entityPicker.init();
@@ -33,7 +38,7 @@ function main() {
 
   /************** Set event handlers ************/
 
-  // cancel button (go to first page and reset state) 
+  // cancel button (go to first page and reset state)
   // WARNING: all button with this class will trigger a reset if clicked
   const resetPluginActions = document.getElementsByClassName(
     "resetPluginAction"
@@ -47,10 +52,30 @@ function main() {
   // first screen event handler
   const fileInput = document.getElementById("importFile") as HTMLInputElement;
   const readButton = document.getElementById("readButton") as HTMLElement;
+  const showExampleButton = document.getElementById("showExampleButton") as HTMLElement;
   fileInput.addEventListener("change", uploader.showFile.bind(uploader));
   readButton.addEventListener("click", () => {
     uploader.readFile();
     entityPicker.showCard();
+  });
+  showExampleButton.addEventListener("click", () => {
+    uploader.hideCard();
+    csvFileStructureExample.showCard();
+  });
+
+  // CSV example screen event handler
+  const showNodeExampleButton = document.getElementById("showNodeExampleButton") as HTMLElement;
+  const showEdgeExampleButton = document.getElementById("showEdgeExampleButton") as HTMLElement;
+  const exitExampleButton = document.getElementById("exitExampleButton") as HTMLElement;
+  showNodeExampleButton.addEventListener("click", () => {
+    csvFileStructureExample.showImageExample(EntityType.NODE);
+  });
+  showEdgeExampleButton.addEventListener("click", () => {
+    csvFileStructureExample.showImageExample(EntityType.EDGE);
+  });
+  exitExampleButton.addEventListener("click", () => {
+    csvFileStructureExample.hideCard();
+    uploader.showCard();
   });
 
   // entity picker event handler
