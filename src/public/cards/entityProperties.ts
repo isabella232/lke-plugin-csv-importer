@@ -90,7 +90,8 @@ export class CSVEntityProperties {
         "POST",
         `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,
         {
-          category: categoryName,
+          separator: ',',
+          entityType: categoryName,
           headers: headers,
           rows: rows
         }
