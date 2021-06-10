@@ -13,10 +13,10 @@ import {EntityType} from "@linkurious/rest-client";
 
 function main() {
 
-  let sourceKey: string | null;
-  let propertiesValue: Array<string> | null;
-  let propertiesName: string | null;
+  let sourceKey: string | undefined;
+  let propertiesName: string | undefined;
   let entityName: string;
+  let csv = "";
 
   /************** Initialize plugin  ************/
 
@@ -60,7 +60,7 @@ function main() {
   const showExampleButton = document.getElementById("showExampleButton") as HTMLElement;
   fileInput.addEventListener("change", uploader.showFile.bind(uploader));
   readButton.addEventListener("click", async () => {
-    ({sourceKey, propertiesValue, propertiesName, entityName} = await uploader.readFile());
+    ({sourceKey, csv, propertiesName, entityName} = await uploader.readFile());
     entityPicker.showCard();
   });
   showExampleButton.addEventListener("click", () => {
@@ -110,7 +110,7 @@ function main() {
   });
   nextButtonCat.addEventListener("click", () => {
     entityNameCard.hideCard();
-    entityProperties.showCard(entityPicker.entityType!, propertiesName!);
+    entityProperties.showCard(entityPicker.entityType!, propertiesName);
   });
 
   // entity properties event handler
@@ -127,10 +127,9 @@ function main() {
   nextButtonProps.addEventListener("click", async () => {
     const feedback = await entityProperties.nextStep(
       entityPicker.entityType!,
-      propertiesName!,
-      propertiesValue!,
-      entityName!,
-      sourceKey!
+      csv,
+      entityName,
+      sourceKey
     );
     entityPicker.entityType === EntitiesTypes.nodes
       ? importFeedback.showCard(feedback as string)
@@ -150,10 +149,9 @@ function main() {
   });
   importButtonEdge.addEventListener("click", async () => {
     importFeedback.showCard(await edgeMapping.importAndFeedback(
-      propertiesName!,
-      propertiesValue!,
-      entityName!,
-      sourceKey!
+      csv,
+      entityName,
+      sourceKey
     ));
   });
 

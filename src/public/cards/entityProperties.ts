@@ -51,7 +51,7 @@ export class CSVEntityProperties {
         },
         0
       );
-      headersFinal.forEach((header: string) => {
+      headersFinal.forEach((header) => {
         this.addProperty(header);
       });
     }
@@ -77,34 +77,19 @@ export class CSVEntityProperties {
    * import it and return message of success
    */
   async importNodes(
-    propertiesName?: string,
-    propertiesValue?: Array<string>,
+    csv: string,
     entityName?: string,
     sourceKey?: string
   ): Promise<string> {
     utils.startWaiting();
     try {
-      if (propertiesName && propertiesValue && entityName) {
-        const propertiesNameParsed = propertiesName.split(",");
-        const nodes = propertiesValue.map((row: string) => {
-          const rowParsed = row.split(",");
-          return {
-            categories: [entityName],
-            properties: propertiesNameParsed.reduce((allProperties, propertyName, index) => {
-              return {
-                ...allProperties,
-                [propertyName]: rowParsed[index],
-              };
-            }, {}),
-          };
+      if (entityName && sourceKey) {
+        const resNodes = await utils.makeRequest("POST", "api/importNodes", {
+          sourceKey: sourceKey,
+          itemType: entityName,
+          csv: csv
         });
-        const resNodes = await utils.makeRequest(
-          "POST",
-          `api/addNodes?sourceKey=${sourceKey}`,
-          {
-            nodes: nodes,
-          }
-        );
+
         const data = JSON.parse(resNodes.response);
         return `${data.success}/${data.total} nodes have been added to the database`;
       }
@@ -118,14 +103,13 @@ export class CSVEntityProperties {
 
   async nextStep(
     entityType: EntitiesTypes,
-    propertiesName?: string,
-    propertiesValue?: Array<string>,
+    csv: string,
     entityName?: string,
     sourceKey?: string
   ): Promise<string | undefined> {
     this.hideCard();
     return entityType === EntitiesTypes.nodes ?
-      this.importNodes(propertiesName, propertiesValue, entityName, sourceKey) : undefined;
+      this.importNodes(csv, entityName, sourceKey) : undefined;
   }
 
   hideCard() {

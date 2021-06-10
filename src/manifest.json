@@ -5,6 +5,6 @@
   "publicRoute": "public",
   "singlePageAppIndex": "index.html",
   "backendFiles": [
-    "backend/routeHandler.js"
+    "backend/graphItemRouter.js"
   ]
 }

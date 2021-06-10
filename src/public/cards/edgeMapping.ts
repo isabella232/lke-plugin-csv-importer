@@ -40,28 +40,23 @@ export class CSVEdgeMapping {
    * import it and return message of success
    */
   async importEdges(
+    csv: string,
     categoriesMapping: CategoriesMapping,
-    propertiesName?: string,
-    propertiesValue?: Array<string>,
     entityName?: string,
     sourceKey?: string
   ): Promise<string> {
     utils.startWaiting();
     try {
-
-      if (propertiesValue && propertiesName && entityName) {
-        const headersParsed = propertiesName.split(",");
-        const queryTemplate = this.createEdgeTemplate(
-          categoriesMapping,
-          entityName,
-          headersParsed
-        );
-        const edges = this.createQueries(queryTemplate, propertiesValue);
+      if (entityName && sourceKey) {
         const resNodes = await utils.makeRequest(
           "POST",
-          `api/addEdges?sourceKey=${sourceKey}`,
+          "api/importEdges",
           {
-            edges: edges,
+            sourceKey: sourceKey,
+            itemType: entityName,
+            csv: csv,
+            sourceType: categoriesMapping.source,
+            destinationType: categoriesMapping.destination
           }
         );
         const data = JSON.parse(resNodes.response);
@@ -75,73 +70,17 @@ export class CSVEdgeMapping {
     }
   }
 
-  /**
-   * From the edge config create query templates
-   */
-  private createEdgeTemplate(
-    categories: CategoriesMapping,
-    edgeType: string,
-    edgeProperties: string[]
-  ): string {
-    const fromNode = `uid = ~0~ `;
-    let fromQuery = `MATCH (f:${categories.source}) WHERE f.${fromNode}`;
-
-    const toNode = `uid = ~1~ `;
-    let toQuery = `MATCH (t:${categories.destination}) WHERE t.${toNode}`;
-
-    const edgePropertiesQuery = edgeProperties
-      .slice(2)
-      .map((property, index) => {
-        return `SET e.${property} = ~${index + 2}~`;
-      })
-      .join(" ");
-    let edgeQuery = `MERGE (f)-[e:${edgeType}]->(t) ${edgePropertiesQuery} RETURN 1`;
-
-    return fromQuery + toQuery + edgeQuery;
-  }
-
-  /**
-   * Using query templates and data from the csv file, return a list of queries to be ran
-   */
-  private createQueries(queryTemplate: string, csv: string[]): string[] {
-    let res = [];
-
-    for (let l = 0; l < csv.length; l++) {
-      let qt = queryTemplate;
-      let line = csv[l].split(",");
-      for (let p = 0; p < line.length; p++) {
-        let par = line[p];
-        if (par != "") {
-          if (
-            (par.startsWith('"') && par.endsWith('"')) ||
-            (par.startsWith("'") && par.endsWith("'"))
-          ) {
-            par = par.slice(1, -1);
-          }
-          par = par.replace('"', '\\"');
-          qt = qt.replace(new RegExp("~" + p + "~", "g"), '"' + par + '"');
-        } else {
-          qt = qt.replace(new RegExp("~" + p + "~", "g"), "null");
-        }
-      }
-      res.push(qt);
-    }
-    return res;
-  }
-
   async importAndFeedback(
-    propertiesName?: string,
-    propertiesValue?: Array<string>,
+    csv: string,
     entityName?: string,
     sourceKey?: string
   ): Promise<string> {
     const feedback = await this.importEdges(
+      csv,
       {
         source: this.inputs[0].value,
         destination: this.inputs[1].value,
       },
-      propertiesName,
-      propertiesValue,
       entityName,
       sourceKey
     );
