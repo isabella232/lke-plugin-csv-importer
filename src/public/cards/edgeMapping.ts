@@ -1,4 +1,4 @@
-import { CategoriesMapping } from "../models";
+import {CategoriesMapping} from "../models";
 import * as utils from "../utils";
 
 /**
@@ -37,25 +37,32 @@ export class CSVEdgeMapping {
   }
 
   /**
-   * Using data in session storage, import it and return message of success
+   * import it and return message of success
    */
-  async importEdges(categoriesMapping: CategoriesMapping): Promise<string> {
+  async importEdges(
+    csv: string,
+    categoriesMapping: CategoriesMapping,
+    entityName?: string,
+    sourceKey?: string
+  ): Promise<string> {
     utils.startWaiting();
     try {
-
-      const resNodes = await utils.makeRequest(
-        "POST",
-        'api/importEdges',
-        {
-          sourceKey: sessionStorage.getItem('sourceKey'),
-          entityType: sessionStorage.getItem('entityName'),
-          csv: sessionStorage.getItem('csv'),
-          sourceType: categoriesMapping.source,
-          destinationType: categoriesMapping.destination
-        }
-      );
-      const data = JSON.parse(resNodes.response);
-      return `${data.success}/${data.total} edges have been added to the database`;
+      if (entityName && sourceKey) {
+        const resNodes = await utils.makeRequest(
+          "POST",
+          'api/importEdges',
+          {
+            sourceKey: sourceKey,
+            itemType: entityName,
+            csv: csv,
+            sourceType: categoriesMapping.source,
+            destinationType: categoriesMapping.destination
+          }
+        );
+        const data = JSON.parse(resNodes.response);
+        return `${data.success}/${data.total} edges have been added to the database`;
+      }
+      return "";
     } catch (error) {
       throw new Error("Import has failed");
     } finally {
@@ -63,11 +70,20 @@ export class CSVEdgeMapping {
     }
   }
 
-  async importAndFeedback(): Promise<string> {
-    const feedback = await this.importEdges({
-      source: this.inputs[0].value,
-      destination: this.inputs[1].value,
-    });
+  async importAndFeedback(
+    csv: string,
+    entityName?: string,
+    sourceKey?: string
+  ): Promise<string> {
+    const feedback = await this.importEdges(
+      csv,
+      {
+        source: this.inputs[0].value,
+        destination: this.inputs[1].value,
+      },
+      entityName,
+      sourceKey
+    );
     this.hideCard();
     return feedback;
   }

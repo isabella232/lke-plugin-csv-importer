@@ -6,12 +6,17 @@ import {
   CSVEdgeMapping,
   CSVImportFeedback,
 } from "./cards";
-import { EntitiesTypes } from "./models";
+import {EntitiesTypes} from "./models";
 import * as utils from "./utils";
 import {CSVFileStructureExample} from "./cards/fileStructureExample";
 import {EntityType} from "@linkurious/rest-client";
 
 function main() {
+
+  let sourceKey: string | null;
+  let propertiesValue: Array<string> | null;
+  let propertiesName: string | null;
+  let entityName: string;
 
   /************** Initialize plugin  ************/
 
@@ -24,8 +29,8 @@ function main() {
   const entityPicker = new CSVEntityPicker();
   entityPicker.init();
 
-  const entityName = new CSVEntityName();
-  entityName.init();
+  const entityNameCard = new CSVEntityName();
+  entityNameCard.init();
 
   const entityProperties = new CSVEntityProperties();
   entityProperties.init();
@@ -38,11 +43,11 @@ function main() {
 
   /************** Set event handlers ************/
 
-  // cancel button (go to first page and reset state)
-  // WARNING: all button with this class will trigger a reset if clicked
+    // cancel button (go to first page and reset state)
+    // WARNING: all button with this class will trigger a reset if clicked
   const resetPluginActions = document.getElementsByClassName(
     "resetPluginAction"
-  ) as HTMLCollectionOf<HTMLElement>;
+    ) as HTMLCollectionOf<HTMLElement>;
   for (let i = 0; i < resetPluginActions.length; i++) {
     resetPluginActions[i].addEventListener("click", () => {
       resetPlugin();
@@ -54,8 +59,8 @@ function main() {
   const readButton = document.getElementById("readButton") as HTMLElement;
   const showExampleButton = document.getElementById("showExampleButton") as HTMLElement;
   fileInput.addEventListener("change", uploader.showFile.bind(uploader));
-  readButton.addEventListener("click", () => {
-    uploader.readFile();
+  readButton.addEventListener("click", async () => {
+    ({sourceKey, propertiesValue, propertiesName, entityName} = await uploader.readFile());
     entityPicker.showCard();
   });
   showExampleButton.addEventListener("click", () => {
@@ -75,7 +80,7 @@ function main() {
   });
   exitExampleButton.addEventListener("click", () => {
     csvFileStructureExample.hideCard();
-    uploader.showCard();
+    uploader.showCard(true);
   });
 
   // entity picker event handler
@@ -87,11 +92,11 @@ function main() {
   ) as HTMLButtonElement;
   previousButtonEntities.addEventListener("click", () => {
     entityPicker.hideCard();
-    uploader.showCard();
+    uploader.showCard(true);
   });
   nextButton.addEventListener("click", () => {
     entityPicker.hideCard();
-    entityName.showCard(entityPicker.entityType!);
+    entityNameCard.showCard(entityPicker.entityType!, entityName);
   });
 
   // entity type/category  event handler
@@ -100,12 +105,12 @@ function main() {
   ) as HTMLInputElement;
   const nextButtonCat = document.getElementById("nextButtonCat") as HTMLElement;
   previousButtonCat.addEventListener("click", () => {
-    entityName.hideCard();
+    entityNameCard.hideCard();
     entityPicker.showCard();
   });
   nextButtonCat.addEventListener("click", () => {
-    entityName.hideCard();
-    entityProperties.showCard(entityPicker.entityType!);
+    entityNameCard.hideCard();
+    entityProperties.showCard(entityPicker.entityType!, propertiesName!);
   });
 
   // entity properties event handler
@@ -117,10 +122,16 @@ function main() {
   ) as HTMLElement;
   previousButtonProps.addEventListener("click", () => {
     entityProperties.hideCard();
-    entityName.showCard();
+    entityNameCard.showCard(undefined, entityName);
   });
   nextButtonProps.addEventListener("click", async () => {
-    const feedback = await entityProperties.nextStep(entityPicker.entityType!);
+    const feedback = await entityProperties.nextStep(
+      entityPicker.entityType!,
+      propertiesName!,
+      propertiesValue!,
+      entityName!,
+      sourceKey!
+    );
     entityPicker.entityType === EntitiesTypes.nodes
       ? importFeedback.showCard(feedback as string)
       : edgeMapping.showCard();
@@ -138,7 +149,12 @@ function main() {
     entityProperties.showCard();
   });
   importButtonEdge.addEventListener("click", async () => {
-    importFeedback.showCard(await edgeMapping.importAndFeedback());
+    importFeedback.showCard(await edgeMapping.importAndFeedback(
+      propertiesName!,
+      propertiesValue!,
+      entityName!,
+      sourceKey!
+    ));
   });
 
   // import feedback event handler
@@ -160,7 +176,7 @@ function main() {
   function resetPlugin() {
     uploader.init();
     entityPicker.init();
-    entityName.init();
+    entityNameCard.init();
     entityProperties.init();
     edgeMapping.init();
     importFeedback.init();

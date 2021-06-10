@@ -1,4 +1,4 @@
-import { EntitiesTypes } from "../models";
+import {EntitiesTypes} from "../models";
 
 /**
  * Class that handles all logic of the entity name card
@@ -30,12 +30,11 @@ export class CSVEntityName {
   }
 
   /**
-   * Using data in session storage, show node category name to user
+   * show node category name to user
    */
-  setNameCategory() {
-    const categoryName = sessionStorage.getItem("entityName");
-    if (categoryName) {
-      this.entityName.innerText = categoryName;
+  setNameCategory(entityName?: string) {
+    if (entityName) {
+      this.entityName.innerText = entityName;
     }
   }
 
@@ -43,11 +42,11 @@ export class CSVEntityName {
     this.container.style.display = "none";
   }
 
-  showCard(entityType?: EntitiesTypes) {
+  showCard(entityType?: EntitiesTypes, entityName?: string) {
     if (entityType !== undefined) {
       this.setTitle(entityType);
     }
-    this.setNameCategory();
+    this.setNameCategory(entityName);
     this.container.style.display = "block";
   }
 }

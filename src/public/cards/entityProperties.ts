@@ -1,5 +1,5 @@
-import {EntitiesTypes} from '../models';
-import * as utils from '../utils';
+import {EntitiesTypes} from "../models";
+import * as utils from "../utils";
 
 /**
  * Class that handles all the logic for the entity properties card
@@ -29,13 +29,12 @@ export class CSVEntityProperties {
   }
 
   /**
-   * Using data in session storage, show properties name that will be added to each node (headers name)
+   * show properties name that will be added to each node (headers name)
    */
-  setNameProperties(entityType: EntitiesTypes) {
+  setNameProperties(entityType: EntitiesTypes, propertiesName?: string) {
     utils.removeChildrenOf(this.entityProperties);
-    const headers = sessionStorage.getItem('headers');
-    if (headers) {
-      const headersParsed = headers.split(',');
+    if (propertiesName) {
+      const headersParsed = propertiesName.split(",");
       const headersFinal =
         entityType === EntitiesTypes.nodes ? headersParsed : headersParsed.slice(2);
       this.largestPropertyLength = headersFinal.reduce((maxLength: number, header: string) => {
@@ -63,20 +62,26 @@ export class CSVEntityProperties {
   }
 
   /**
-   * Using data in session storage, import it and return message of success
+   * import it and return message of success
    */
-  async importNodes(): Promise<string> {
+  async importNodes(
+    csv: string,
+    entityName?: string,
+    sourceKey?: string
+  ): Promise<string> {
     utils.startWaiting();
     try {
-      const resNodes = await utils.makeRequest('POST', 'api/importNodes', {
-        sourceKey: sessionStorage.getItem('sourceKey'),
-        entityType: sessionStorage.getItem('entityName'),
-        csv: sessionStorage.getItem('csv')
-      });
+      if (entityName && sourceKey) {
+        const resNodes = await utils.makeRequest('POST', 'api/importNodes', {
+          sourceKey: sourceKey,
+          itemType: entityName,
+          csv: csv
+        });
 
-      const data = JSON.parse(resNodes.response);
-      console.log({data});
-      return `${data.success}/${data.total} nodes have been added to the database`;
+        const data = JSON.parse(resNodes.response);
+        return `${data.success}/${data.total} nodes have been added to the database`;
+      }
+      return "";
     } catch (error) {
       throw new Error('Import has failed');
     } finally {
@@ -84,19 +89,28 @@ export class CSVEntityProperties {
     }
   }
 
-  async nextStep(entityType: EntitiesTypes): Promise<string | undefined> {
+  async nextStep(
+    entityType: EntitiesTypes,
+    csv: string,
+    entityName?: string,
+    sourceKey?: string
+  ): Promise<string | undefined> {
     this.hideCard();
-    return entityType === EntitiesTypes.nodes ? this.importNodes() : undefined;
+    return entityType === EntitiesTypes.nodes ?
+      this.importNodes(csv, entityName, sourceKey) : undefined;
   }
 
   hideCard() {
     this.container.style.display = 'none';
   }
 
-  showCard(entityType?: EntitiesTypes) {
+  showCard(
+    entityType?: EntitiesTypes,
+    propertiesName?: string,
+  ) {
     if (entityType !== undefined) {
       this.setTitle(entityType);
-      this.setNameProperties(entityType);
+      this.setNameProperties(entityType, propertiesName);
       this.setButtonName(entityType);
     }
     this.container.style.display = 'block';
