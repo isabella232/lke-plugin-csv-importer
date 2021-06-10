@@ -72,8 +72,8 @@ export class GroupedErrors extends Map<string, number[]> {
     if (!(error instanceof LkResponse) && GroupedErrors.validKeys.has(error as RowErrorMessage)) {
       return error as RowErrorMessage;
     }
+
     const message = error instanceof LkResponse ? error.body.message : error;
-    const key = error instanceof LkResponse ? error.body.key : undefined;
     if (message.includes('source') && message.includes('target')) {
       return RowErrorMessage.SOURCE_TARGET_NOT_FOUND;
     }
@@ -86,12 +86,15 @@ export class GroupedErrors extends Map<string, number[]> {
     if (message.includes('" has unexpected properties')) {
       return RowErrorMessage.UNEXPECTED_SCHEMA_PROPERTIES;
     }
+
+    const key = error instanceof LkResponse ? error.body.key : undefined;
     if (key === LkErrorKey.DATA_SOURCE_UNAVAILABLE) {
       return RowErrorMessage.DATA_SOURCE_UNAVAILABLE;
     }
     if (key === LkErrorKey.UNAUTHORIZED) {
       return RowErrorMessage.UNAUTHORIZED
     }
+
     return RowErrorMessage.UNEXPECTED;
   }
 }
