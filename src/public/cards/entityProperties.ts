@@ -1,5 +1,5 @@
-import { EntitiesTypes } from "../models";
-import * as utils from "../utils";
+import {EntitiesTypes} from '../models';
+import * as utils from '../utils';
 
 /**
  * Class that handles all the logic for the entity properties card
@@ -14,19 +14,13 @@ export class CSVEntityProperties {
 
   private largestPropertyLength = 0;
 
-  private titleCompleter = ["node", "edge"];
+  private titleCompleter = ['node', 'edge'];
 
   init() {
-    this.container = document.getElementById(
-      "entityPropsContainer"
-    ) as HTMLElement;
-    this.titleHolder = this.container.getElementsByClassName(
-      "titleCard"
-    )[0] as HTMLElement;
-    this.entityProperties = document.getElementById("nameProps") as HTMLElement;
-    this.nextButton = document.getElementById(
-      "nextButtonProps"
-    ) as HTMLButtonElement;
+    this.container = document.getElementById('entityPropsContainer') as HTMLElement;
+    this.titleHolder = this.container.getElementsByClassName('titleCard')[0] as HTMLElement;
+    this.entityProperties = document.getElementById('nameProps') as HTMLElement;
+    this.nextButton = document.getElementById('nextButtonProps') as HTMLButtonElement;
     this.hideCard();
   }
 
@@ -39,19 +33,14 @@ export class CSVEntityProperties {
    */
   setNameProperties(entityType: EntitiesTypes) {
     utils.removeChildrenOf(this.entityProperties);
-    const headers = sessionStorage.getItem("headers");
+    const headers = sessionStorage.getItem('headers');
     if (headers) {
-      const headersParsed = headers.split(",");
+      const headersParsed = headers.split(',');
       const headersFinal =
-        entityType === EntitiesTypes.nodes
-          ? headersParsed
-          : headersParsed.slice(2);
-      this.largestPropertyLength = headersFinal.reduce(
-        (maxLength: number, header: string) => {
-          return header.length > maxLength ? header.length : maxLength;
-        },
-        0
-      );
+        entityType === EntitiesTypes.nodes ? headersParsed : headersParsed.slice(2);
+      this.largestPropertyLength = headersFinal.reduce((maxLength: number, header: string) => {
+        return header.length > maxLength ? header.length : maxLength;
+      }, 0);
       headersFinal.forEach((header: string) => {
         this.addProperty(header);
       });
@@ -59,17 +48,16 @@ export class CSVEntityProperties {
   }
 
   setButtonName(entityType: EntitiesTypes) {
-    this.nextButton.innerText =
-      entityType === EntitiesTypes.nodes ? "Import" : "Next";
+    this.nextButton.innerText = entityType === EntitiesTypes.nodes ? 'Import' : 'Next';
   }
 
   /**
    * Add 1 property name to property names container
    */
   addProperty(name: string) {
-    const newProperty = document.createElement("div");
+    const newProperty = document.createElement('div');
     newProperty.innerText = name;
-    newProperty.className = "nodeProperty";
+    newProperty.className = 'nodeProperty';
     newProperty.style.width = `${this.largestPropertyLength * 10}px`;
     this.entityProperties.append(newProperty);
   }
@@ -80,28 +68,17 @@ export class CSVEntityProperties {
   async importNodes(): Promise<string> {
     utils.startWaiting();
     try {
-      const stringRows = sessionStorage.getItem("rows")!;
-      const stringHeaders = sessionStorage.getItem("headers")!;
-      const categoryName = sessionStorage.getItem("entityName")!;
-      const rows: string[] = JSON.parse(stringRows);
-      const headers: string[] = stringHeaders.split(",");
-
-      const resNodes = await utils.makeRequest(
-        "POST",
-        `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,
-        {
-          separator: ',',
-          entityType: categoryName,
-          headers: headers,
-          rows: rows
-        }
-      );
+      const resNodes = await utils.makeRequest('POST', 'api/importNodes', {
+        sourceKey: sessionStorage.getItem('sourceKey'),
+        entityType: sessionStorage.getItem('entityName'),
+        csv: sessionStorage.getItem('csv')
+      });
 
       const data = JSON.parse(resNodes.response);
       console.log({data});
       return `${data.success}/${data.total} nodes have been added to the database`;
     } catch (error) {
-      throw new Error("Import has failed");
+      throw new Error('Import has failed');
     } finally {
       utils.stopWaiting();
     }
@@ -113,7 +90,7 @@ export class CSVEntityProperties {
   }
 
   hideCard() {
-    this.container.style.display = "none";
+    this.container.style.display = 'none';
   }
 
   showCard(entityType?: EntitiesTypes) {
@@ -122,6 +99,6 @@ export class CSVEntityProperties {
       this.setNameProperties(entityType);
       this.setButtonName(entityType);
     }
-    this.container.style.display = "block";
+    this.container.style.display = 'block';
   }
 }

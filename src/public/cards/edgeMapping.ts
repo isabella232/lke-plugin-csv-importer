@@ -42,20 +42,14 @@ export class CSVEdgeMapping {
   async importEdges(categoriesMapping: CategoriesMapping): Promise<string> {
     utils.startWaiting();
     try {
-      const stringRows = sessionStorage.getItem("rows")!;
-      const stringHeaders = sessionStorage.getItem("headers")!;
-      const edgeType = sessionStorage.getItem("entityName")!;
-      const rows: string[] = JSON.parse(stringRows);
-      const headers: string[] = stringHeaders.split(",");
 
       const resNodes = await utils.makeRequest(
         "POST",
-        `api/addEdges?sourceKey=${sessionStorage.getItem("sourceKey")}`,
+        'api/importEdges',
         {
-          separator: ',',
-          entityType: edgeType,
-          headers: headers,
-          rows: rows,
+          sourceKey: sessionStorage.getItem('sourceKey'),
+          entityType: sessionStorage.getItem('entityName'),
+          csv: sessionStorage.getItem('csv'),
           sourceType: categoriesMapping.source,
           destinationType: categoriesMapping.destination
         }

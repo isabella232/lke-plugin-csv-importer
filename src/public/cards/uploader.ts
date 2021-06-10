@@ -79,6 +79,7 @@ export class CSVUploader {
         const rowsStringify = JSON.stringify(rows);
         sessionStorage.setItem("rows", rowsStringify);
         sessionStorage.setItem("headers", headers || "");
+        sessionStorage.setItem("csv", result || "");
         this.hideCard();
       }
     };
