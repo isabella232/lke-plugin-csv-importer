@@ -1,4 +1,5 @@
 import {Request, Response} from 'express';
+import {LkError, LkErrorKey, Response as LkResponse} from '@linkurious/rest-client';
 
 /**
  * Same as input.split(/\r?\n/).map(row => row.split(',') but lazy
@@ -35,18 +36,25 @@ export function* parseCSV(input: string): Generator<string[]> {
   yield lineValues;
 }
 
-export enum RowErrorKey {
+export enum RowErrorMessage {
   TOO_MANY_VALUES = 'Got more values than headers',
-  SOURCE_TARGET_NOT_FOUND = 'Source or target node not found'
+  SOURCE_TARGET_NOT_FOUND = 'Source or target node not found',
+  SCHEMA_NON_COMPLAINT = 'Values types are not complaint with the schema',
+  MISSING_REQUIRED_PROPERTIES = 'Missing properties required by the schema',
+  UNEXPECTED_SCHEMA_PROPERTIES = 'Got properties not expected by the schema',
+  DATA_SOURCE_UNAVAILABLE = 'Data-source is not available',
+  UNAUTHORIZED = 'You are not logged in',
+  UNEXPECTED = 'Unexpected error, check the logs'
 }
 
 export class GroupedErrors extends Map<string, number[]> {
+  public static validKeys = new Set(Object.values(RowErrorMessage));
   public total = 0;
-  public add(error: string, row: number) {
-    // TODO simplify error message
-    const entry = this.get(error);
+  public add(error: string | LkResponse<LkError>, row: number) {
+    const errorKey = GroupedErrors.simplifyErrorMessage(error);
+    const entry = this.get(errorKey);
     if (entry === undefined) {
-      this.set(error, [row]);
+      this.set(errorKey, [row]);
     } else {
       entry.push(row);
     }
@@ -58,6 +66,33 @@ export class GroupedErrors extends Map<string, number[]> {
       text += `${a}: ${b.join(', ')}\n`;
     }
     return text;
+  }
+
+  private static simplifyErrorMessage(error: string | LkResponse<LkError>): RowErrorMessage {
+    if (!(error instanceof LkResponse) && GroupedErrors.validKeys.has(error as RowErrorMessage)) {
+      return error as RowErrorMessage;
+    }
+    const message = error instanceof LkResponse ? error.body.message : error;
+    const key = error instanceof LkResponse ? error.body.key : undefined;
+    if (message.includes('source') && message.includes('target')) {
+      return RowErrorMessage.SOURCE_TARGET_NOT_FOUND;
+    }
+    if (message.includes('" must be')) {
+      return RowErrorMessage.SCHEMA_NON_COMPLAINT;
+    }
+    if (message.includes('" must not be undefined')) {
+      return RowErrorMessage.MISSING_REQUIRED_PROPERTIES;
+    }
+    if (message.includes('" has unexpected properties')) {
+      return RowErrorMessage.UNEXPECTED_SCHEMA_PROPERTIES;
+    }
+    if (key === LkErrorKey.DATA_SOURCE_UNAVAILABLE) {
+      return RowErrorMessage.DATA_SOURCE_UNAVAILABLE;
+    }
+    if (key === LkErrorKey.UNAUTHORIZED) {
+      return RowErrorMessage.UNAUTHORIZED
+    }
+    return RowErrorMessage.UNEXPECTED;
   }
 }
 

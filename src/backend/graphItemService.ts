@@ -1,6 +1,6 @@
 
 import {RestClient} from '@linkurious/rest-client';
-import {GroupedErrors, InvalidParameter, parseCSV, RowErrorKey} from './utils';
+import {GroupedErrors, InvalidParameter, parseCSV, RowErrorMessage} from './utils';
 import {ImportEdgesParams, ImportItemsResponse, ImportNodesParams} from '../@types/shared';
 
 export class GraphItemService {
@@ -44,7 +44,7 @@ export class GraphItemService {
 
         console.log({response});
         if (!response.isSuccess()) {
-          errors.add(response.body.message, i);
+          errors.add(response, i);
         }
       } catch (e) {
         console.log({e});
@@ -72,6 +72,7 @@ export class GraphItemService {
       throw new InvalidParameter('Headers cannot be empty');
     }
     return headers;
+    // TODO check missing required properties (schemas) and unexpected properties (strict-schema)
   }
 
   /**
@@ -85,7 +86,7 @@ export class GraphItemService {
     // There should not be more values than headers
     if (rowValues.length > headers.length) {
       console.log({rowValues, headers});
-      throw new Error(RowErrorKey.TOO_MANY_VALUES);
+      throw new Error(RowErrorMessage.TOO_MANY_VALUES);
     }
     const properties: Record<string, string> = {};
     // First two values of an edge are the source and the target
@@ -110,7 +111,7 @@ export class GraphItemService {
   ): Promise<string> {
     // TODO we can cache the nodes on creation and get them here
     if (!uid) {
-      throw new Error(RowErrorKey.SOURCE_TARGET_NOT_FOUND);
+      throw new Error(RowErrorMessage.SOURCE_TARGET_NOT_FOUND);
     }
     const query = `MATCH (n:\`${category}\`) WHERE n.UID = "${uid}" return n limit 1`; // TODO escape properly
     try {
@@ -122,10 +123,10 @@ export class GraphItemService {
         return res.body.nodes[0].id;
       }
       console.log(query, res.body);
-      throw new Error(RowErrorKey.SOURCE_TARGET_NOT_FOUND);
+      throw new Error(RowErrorMessage.SOURCE_TARGET_NOT_FOUND);
     } catch (e) {
       console.log(query, e);
-      throw new Error(RowErrorKey.SOURCE_TARGET_NOT_FOUND);
+      throw new Error(RowErrorMessage.SOURCE_TARGET_NOT_FOUND);
     }
   }
 }
