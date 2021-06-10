@@ -111,7 +111,10 @@ export function respond(
       console.log(e);
       // We don't really care about the status code
       res.status(400);
-      res.json(e);
+      res.json({
+        success: 0,
+        error: e.message
+      });
     }
   };
 }

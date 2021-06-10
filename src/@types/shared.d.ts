@@ -12,6 +12,6 @@ export interface ImportEdgesParams extends ImportNodesParams {
 
 export type ImportItemsResponse = {
   success: number;
-  failed: number;
-  error: string;
-};
+  failed?: number;
+  error?: string;
+}

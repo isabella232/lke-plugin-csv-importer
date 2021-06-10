@@ -51,6 +51,9 @@ export class CSVEntityProperties {
         },
         0
       );
+      headersFinal.forEach((header) => {
+        this.addProperty(header);
+      });
     }
   }
 

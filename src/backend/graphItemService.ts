@@ -52,6 +52,12 @@ export class GraphItemService {
       }
     }
 
+    if (errors.total === 0) {
+      return {
+        success: i
+      };
+    }
+
     return {
       success: i - errors.total,
       failed: errors.total,
@@ -120,13 +126,13 @@ export class GraphItemService {
         query: query
       });
       if (res.isSuccess() && res.body.nodes.length > 0) {
+        // We return the id if the was found, in any other case we fail with SOURCE_TARGET_NOT_FOUND
         return res.body.nodes[0].id;
       }
       console.log(query, res.body);
-      throw new Error(RowErrorMessage.SOURCE_TARGET_NOT_FOUND);
     } catch (e) {
       console.log(query, e);
-      throw new Error(RowErrorMessage.SOURCE_TARGET_NOT_FOUND);
     }
+    throw new Error(RowErrorMessage.SOURCE_TARGET_NOT_FOUND);
   }
 }
