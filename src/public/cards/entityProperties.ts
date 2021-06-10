@@ -1,4 +1,4 @@
-import { EntitiesTypes } from "../models";
+import {EntitiesTypes} from "../models";
 import * as utils from "../utils";
 
 /**
@@ -35,13 +35,12 @@ export class CSVEntityProperties {
   }
 
   /**
-   * Using data in session storage, show properties name that will be added to each node (headers name)
+   * show properties name that will be added to each node (headers name)
    */
-  setNameProperties(entityType: EntitiesTypes) {
+  setNameProperties(entityType: EntitiesTypes, propertiesName?: string) {
     utils.removeChildrenOf(this.entityProperties);
-    const headers = sessionStorage.getItem("headers");
-    if (headers) {
-      const headersParsed = headers.split(",");
+    if (propertiesName) {
+      const headersParsed = propertiesName.split(",");
       const headersFinal =
         entityType === EntitiesTypes.nodes
           ? headersParsed
@@ -75,32 +74,33 @@ export class CSVEntityProperties {
   }
 
   /**
-   * Using data in session storage, import it and return message of success
+   * import it and return message of success
    */
-  async importNodes(): Promise<string> {
+  async importNodes(
+    propertiesName?: string,
+    propertiesValue?: Array<string>,
+    entityName?: string,
+    sourceKey?: string
+  ): Promise<string> {
     utils.startWaiting();
     try {
-      const rows = sessionStorage.getItem("rows");
-      const headers = sessionStorage.getItem("headers");
-      const categoryName = sessionStorage.getItem("entityName");
-      if (rows && headers && categoryName) {
-        const rowsParsed = JSON.parse(rows);
-        const headersParsed = headers.split(",");
-        const nodes = rowsParsed.map((row: any) => {
+      if (propertiesName && propertiesValue && entityName) {
+        const propertiesNameParsed = propertiesName.split(",");
+        const nodes = propertiesValue.map((row: string) => {
           const rowParsed = row.split(",");
           return {
-            categories: [categoryName],
-            properties: headersParsed.reduce((allProperties, header, index) => {
+            categories: [entityName],
+            properties: propertiesNameParsed.reduce((allProperties, propertyName, index) => {
               return {
                 ...allProperties,
-                [header]: rowParsed[index],
+                [propertyName]: rowParsed[index],
               };
             }, {}),
           };
         });
         const resNodes = await utils.makeRequest(
           "POST",
-          `api/addNodes?sourceKey=${sessionStorage.getItem("sourceKey")}`,
+          `api/addNodes?sourceKey=${sourceKey}`,
           {
             nodes: nodes,
           }
@@ -116,19 +116,29 @@ export class CSVEntityProperties {
     }
   }
 
-  async nextStep(entityType: EntitiesTypes): Promise<string | undefined> {
+  async nextStep(
+    entityType: EntitiesTypes,
+    propertiesName?: string,
+    propertiesValue?: Array<string>,
+    entityName?: string,
+    sourceKey?: string
+  ): Promise<string | undefined> {
     this.hideCard();
-    return entityType === EntitiesTypes.nodes ? this.importNodes() : undefined;
+    return entityType === EntitiesTypes.nodes ?
+      this.importNodes(propertiesName, propertiesValue, entityName, sourceKey) : undefined;
   }
 
   hideCard() {
     this.container.style.display = "none";
   }
 
-  showCard(entityType?: EntitiesTypes) {
+  showCard(
+    entityType?: EntitiesTypes,
+    propertiesName?: string,
+  ) {
     if (entityType !== undefined) {
       this.setTitle(entityType);
-      this.setNameProperties(entityType);
+      this.setNameProperties(entityType, propertiesName);
       this.setButtonName(entityType);
     }
     this.container.style.display = "block";

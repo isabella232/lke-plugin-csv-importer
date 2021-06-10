@@ -1,4 +1,4 @@
-import { CategoriesMapping } from "../models";
+import {CategoriesMapping} from "../models";
 import * as utils from "../utils";
 
 /**
@@ -37,26 +37,29 @@ export class CSVEdgeMapping {
   }
 
   /**
-   * Using data in session storage, import it and return message of success
+   * import it and return message of success
    */
-  async importEdges(categoriesMapping: CategoriesMapping): Promise<string> {
+  async importEdges(
+    categoriesMapping: CategoriesMapping,
+    propertiesName?: string,
+    propertiesValue?: Array<string>,
+    entityName?: string,
+    sourceKey?: string
+  ): Promise<string> {
     utils.startWaiting();
     try {
-      const rows = sessionStorage.getItem("rows");
-      const headers = sessionStorage.getItem("headers");
-      const edgeType = sessionStorage.getItem("entityName");
-      if (rows && headers && edgeType) {
-        const rowsParsed = JSON.parse(rows);
-        const headersParsed = headers.split(",");
+
+      if (propertiesValue && propertiesName && entityName) {
+        const headersParsed = propertiesName.split(",");
         const queryTemplate = this.createEdgeTemplate(
           categoriesMapping,
-          edgeType,
+          entityName,
           headersParsed
         );
-        const edges = this.createQueries(queryTemplate, rowsParsed);
+        const edges = this.createQueries(queryTemplate, propertiesValue);
         const resNodes = await utils.makeRequest(
           "POST",
-          `api/addEdges?sourceKey=${sessionStorage.getItem("sourceKey")}`,
+          `api/addEdges?sourceKey=${sourceKey}`,
           {
             edges: edges,
           }
@@ -126,11 +129,22 @@ export class CSVEdgeMapping {
     return res;
   }
 
-  async importAndFeedback(): Promise<string> {
-    const feedback = await this.importEdges({
-      source: this.inputs[0].value,
-      destination: this.inputs[1].value,
-    });
+  async importAndFeedback(
+    propertiesName?: string,
+    propertiesValue?: Array<string>,
+    entityName?: string,
+    sourceKey?: string
+  ): Promise<string> {
+    const feedback = await this.importEdges(
+      {
+        source: this.inputs[0].value,
+        destination: this.inputs[1].value,
+      },
+      propertiesName,
+      propertiesValue,
+      entityName,
+      sourceKey
+    );
     this.hideCard();
     return feedback;
   }
