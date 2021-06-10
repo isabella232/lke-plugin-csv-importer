@@ -69,9 +69,9 @@ export class CSVUploader {
    */
   readFile(): Promise<{
     sourceKey: string,
-    propertiesValue: Array<string>,
     propertiesName: string,
-    entityName: string
+    entityName: string,
+    csv: string
   }> {
     return new Promise((resolve, reject) => {
       const params = new URLSearchParams(window.location.search);
@@ -80,6 +80,7 @@ export class CSVUploader {
         this.fileError.innerHTML = "No source key defined in URL";
         this.showError();
         reject("No source key defined in URL");
+        return;
       }
 
       const files = this.fileInput?.files;
@@ -91,14 +92,13 @@ export class CSVUploader {
           if (event && event.target && event.target.result) {
             const result = event.target.result as string;
             // this regex identifies all new line characters (independently of the OS: windows or unix)
-            // then it creates an array of string (each line is an element of the array)
-            const rows = result.split(/\r?\n|\r/);
-            const headers = rows.shift();
+            // then it extracts the first line (csv headers)
+            const headers = result.split(/\r?\n|\r/, 1)[0];
             resolve({
-              sourceKey: sourceKey || "",
-              propertiesValue: rows,
-              propertiesName: headers || "",
-              entityName: this._entityName
+              sourceKey: sourceKey,
+              propertiesName: headers,
+              entityName: this._entityName,
+              csv: result
             });
             this.hideCard();
           }

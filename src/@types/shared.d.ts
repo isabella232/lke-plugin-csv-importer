@@ -1,7 +1,7 @@
 export interface ImportNodesParams {
   sourceKey: string;
   csv: string;
-  entityType: string;
+  itemType: string;
   separator: string;
 }
 

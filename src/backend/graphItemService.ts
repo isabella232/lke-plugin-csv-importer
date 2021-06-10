@@ -25,10 +25,10 @@ export class GraphItemService {
         let response;
         if (isEdge) {
           // Import an edge
-          const {sourceKey, entityType, sourceType, destinationType} = params as ImportEdgesParams;
+          const {sourceKey, itemType, sourceType, destinationType} = params as ImportEdgesParams;
           response = await rc.graphEdge.createEdge({
             sourceKey: sourceKey,
-            type: entityType,
+            type: itemType,
             properties: properties,
             source: await GraphItemService.getNodeID(rc, sourceKey, sourceType, rowValues[0]),
             target: await GraphItemService.getNodeID(rc, sourceKey, destinationType, rowValues[1])
@@ -37,7 +37,7 @@ export class GraphItemService {
           // Import a node
           response = await rc.graphNode.createNode({
             sourceKey: params.sourceKey,
-            categories: [params.entityType],
+            categories: [params.itemType],
             properties: properties
           });
         }
