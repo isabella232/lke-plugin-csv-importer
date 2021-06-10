@@ -1,6 +1,6 @@
 
 import {RestClient} from '@linkurious/rest-client';
-import {GroupedErrors, InvalidParameter, parseCSV, RowErrorMessage} from './utils';
+import {GroupedErrors, parseCSV, RowErrorMessage} from './utils';
 import {ImportEdgesParams, ImportItemsResponse, ImportNodesParams} from '../@types/shared';
 
 export class GraphItemService {
@@ -69,7 +69,7 @@ export class GraphItemService {
       headers.length === 0 ||
       headers.some((h) => typeof h !== 'string' || h.length === 0)
     ) {
-      throw new InvalidParameter('Headers cannot be empty');
+      throw new Error('Headers cannot be empty');
     }
     return headers;
     // TODO check missing required properties (schemas) and unexpected properties (strict-schema)

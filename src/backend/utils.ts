@@ -106,16 +106,9 @@ export function respond(
       res.json(body);
     } catch (e) {
       console.log(e);
-      if (e instanceof InvalidParameter) {
-        res.status(400);
-      } else {
-        res.status(500);
-      }
+      // We don't really care about the status code
+      res.status(400);
       res.json(e);
     }
   };
-}
-
-export class InvalidParameter {
-  constructor(readonly message: string) {}
 }
