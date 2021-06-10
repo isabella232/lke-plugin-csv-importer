@@ -14,13 +14,19 @@ export class CSVEntityProperties {
 
   private largestPropertyLength = 0;
 
-  private titleCompleter = ['node', 'edge'];
+  private titleCompleter = ["node", "edge"];
 
   init() {
-    this.container = document.getElementById('entityPropsContainer') as HTMLElement;
-    this.titleHolder = this.container.getElementsByClassName('titleCard')[0] as HTMLElement;
-    this.entityProperties = document.getElementById('nameProps') as HTMLElement;
-    this.nextButton = document.getElementById('nextButtonProps') as HTMLButtonElement;
+    this.container = document.getElementById(
+      "entityPropsContainer"
+    ) as HTMLElement;
+    this.titleHolder = this.container.getElementsByClassName(
+      "titleCard"
+    )[0] as HTMLElement;
+    this.entityProperties = document.getElementById("nameProps") as HTMLElement;
+    this.nextButton = document.getElementById(
+      "nextButtonProps"
+    ) as HTMLButtonElement;
     this.hideCard();
   }
 
@@ -36,27 +42,30 @@ export class CSVEntityProperties {
     if (propertiesName) {
       const headersParsed = propertiesName.split(",");
       const headersFinal =
-        entityType === EntitiesTypes.nodes ? headersParsed : headersParsed.slice(2);
-      this.largestPropertyLength = headersFinal.reduce((maxLength: number, header: string) => {
-        return header.length > maxLength ? header.length : maxLength;
-      }, 0);
-      headersFinal.forEach((header: string) => {
-        this.addProperty(header);
-      });
+        entityType === EntitiesTypes.nodes
+          ? headersParsed
+          : headersParsed.slice(2);
+      this.largestPropertyLength = headersFinal.reduce(
+        (maxLength: number, header: string) => {
+          return header.length > maxLength ? header.length : maxLength;
+        },
+        0
+      );
     }
   }
 
   setButtonName(entityType: EntitiesTypes) {
-    this.nextButton.innerText = entityType === EntitiesTypes.nodes ? 'Import' : 'Next';
+    this.nextButton.innerText =
+      entityType === EntitiesTypes.nodes ? "Import" : "Next";
   }
 
   /**
    * Add 1 property name to property names container
    */
   addProperty(name: string) {
-    const newProperty = document.createElement('div');
+    const newProperty = document.createElement("div");
     newProperty.innerText = name;
-    newProperty.className = 'nodeProperty';
+    newProperty.className = "nodeProperty";
     newProperty.style.width = `${this.largestPropertyLength * 10}px`;
     this.entityProperties.append(newProperty);
   }
@@ -72,7 +81,7 @@ export class CSVEntityProperties {
     utils.startWaiting();
     try {
       if (entityName && sourceKey) {
-        const resNodes = await utils.makeRequest('POST', 'api/importNodes', {
+        const resNodes = await utils.makeRequest("POST", "api/importNodes", {
           sourceKey: sourceKey,
           itemType: entityName,
           csv: csv
@@ -83,7 +92,7 @@ export class CSVEntityProperties {
       }
       return "";
     } catch (error) {
-      throw new Error('Import has failed');
+      throw new Error("Import has failed");
     } finally {
       utils.stopWaiting();
     }
@@ -101,7 +110,7 @@ export class CSVEntityProperties {
   }
 
   hideCard() {
-    this.container.style.display = 'none';
+    this.container.style.display = "none";
   }
 
   showCard(
@@ -113,6 +122,6 @@ export class CSVEntityProperties {
       this.setNameProperties(entityType, propertiesName);
       this.setButtonName(entityType);
     }
-    this.container.style.display = 'block';
+    this.container.style.display = "block";
   }
 }

@@ -50,7 +50,7 @@ export class CSVEdgeMapping {
       if (entityName && sourceKey) {
         const resNodes = await utils.makeRequest(
           "POST",
-          'api/importEdges',
+          "api/importEdges",
           {
             sourceKey: sourceKey,
             itemType: entityName,

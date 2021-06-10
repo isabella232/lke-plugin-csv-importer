@@ -1,5 +1,9 @@
 import {Request, Response} from 'express';
 
+/**
+ * Same as input.split(/\r?\n/).map(row => row.split(',') but lazy
+ * It does not take care of escaping commas, line-breaks, etc...
+ */
 export function* parseCSV(input: string): Generator<string[]> {
   let value = '';
   let lineValues = [];

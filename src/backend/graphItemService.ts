@@ -19,7 +19,7 @@ export class GraphItemService {
     for (const rowValues of csv) {
       i++;
       try {
-        // Merge headers with the row values
+        // Merge headers with rowValues
         const properties = GraphItemService.buildProperties(headers, rowValues, isEdge);
 
         let response;
@@ -108,6 +108,7 @@ export class GraphItemService {
     category: string,
     uid: string | undefined
   ): Promise<string> {
+    // TODO we can cache the nodes on creation and get them here
     if (!uid) {
       throw new Error(RowErrorKey.SOURCE_TARGET_NOT_FOUND);
     }
