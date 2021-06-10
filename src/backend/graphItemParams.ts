@@ -6,8 +6,8 @@ export class GraphItemParams {
       !req.body ||
       !req.body.csv ||
       typeof req.body.csv !== 'string' ||
-      !req.body.entityType ||
-      typeof req.body.entityType !== 'string' ||
+      !req.body.itemType ||
+      typeof req.body.itemType !== 'string' ||
       !req.body ||
       !req.body.sourceKey
     ) {
