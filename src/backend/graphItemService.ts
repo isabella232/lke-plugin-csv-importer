@@ -61,7 +61,7 @@ export class GraphItemService {
     return {
       success: i - errors.total,
       failed: errors.total,
-      error: errors.toString()
+      error: errors.toObject()
     };
   }
 

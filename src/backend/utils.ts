@@ -60,12 +60,12 @@ export class GroupedErrors extends Map<string, number[]> {
     }
     this.total++;
   }
-  public toString() {
-    let text = '';
+  public toObject() {
+    const obj: Record<string, number[]> = {};
     for (const [a, b] of this) {
-      text += `${a}: ${b.join(', ')}\n`;
+      obj[a] = b;
     }
-    return text;
+    return obj;
   }
 
   private static simplifyErrorMessage(error: string | LkResponse<LkError>): RowErrorMessage {
@@ -112,8 +112,7 @@ export function respond(
       // We don't really care about the status code
       res.status(400);
       res.json({
-        success: 0,
-        error: e.message
+        success: 0
       });
     }
   };
