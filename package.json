@@ -5,19 +5,27 @@
     "node": "14.16.1",
     "npm": "6.14.12"
   },
+  "files": [
+    "backend/**/**.js",
+    "public/**.js",
+    "public/assets/**",
+    "manifest.json",
+    "package.json"
+  ],
   "description": "A plugin to quickly import CSV data into LKE",
   "main": "public/index.js",
   "scripts": {
     "tsc": "tsc -b",
     "clean": "rm -rf csv-importer.lke",
     "copy-assets": "cp -R src/public/assets csv-importer.lke/public && cp src/public/index.html csv-importer.lke/public",
-    "installProduction": "cp package.json csv-importer.lke && cd csv-importer.lke",
+    "installProduction": "cp package.json csv-importer.lke",
     "copyManifest": "cp -R src/manifest.json csv-importer.lke/",
     "lint:ci-deactivated": "eslint -f checkstyle -o reports/checkstyle.xml  .",
     "build:project": "npm-run-all build:public build:backend copyManifest",
     "build:public": "tsc -b src/public && npm run copy-assets && cd src/public/dist && browserify *.js --debug -o ../../../csv-importer.lke/public/index.js",
     "build:backend": "tsc -b src/backend && npm run installProduction",
-    "build": "npm run build:project && npm pack && gunzip -qf -c linkurious-lke-plugin-csv-importer-$(cat .version).tgz > lke-plugin-csv-importer.lke",
+    "build": "npm run build:project  && npm pack  ./csv-importer.lke && npm run gunzip ",
+    "gunzip": "gunzip -qf -c linkurious-lke-plugin-csv-importer-$(cat .version).tgz > lke-plugin-csv-importer.lke",
     "plugin:tar": "scripts/postpack.js",
     "bump:patch": "bump2version patch && npm version --no-git-tag-version patch",
     "bump:minor": "bump2version minor && npm version --no-git-tag-version minor",
@@ -52,10 +60,5 @@
   },
   "bundledDependencies": [
     "body-parser"
-  ],
-  "files": [
-    "manifest.json",
-    "public",
-    "backend"
   ]
 }
