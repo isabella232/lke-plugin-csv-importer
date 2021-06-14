@@ -43,6 +43,7 @@ a {
     cursor: pointer;
     padding: 0;
     border-radius: 0;
+    margin-top: 32px;
 }
 
 #showExampleButton, #showEdgeExampleButton {
@@ -66,6 +67,12 @@ a {
     border-radius: 8px;
     background-color: #fff;
     display: none;
+    width: 520px;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
 }
 
 .titleCard {
@@ -318,6 +325,38 @@ input[type='checkbox'] {
     background-color: #fff;
 }
 
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.success {
+    color: #33AB84;
+}
+
+.failed {
+    color: #EC5B62;
+}
+
+.incomplete {
+    color: #F29423;
+}
+
+.import-error {
+    background-color: #FCFCFC;
+    max-height: 210px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #D9D9D9;
+    padding: 16px;
+}
+
+.import-helper {
+    margin-top: 8px;
+    font-size: 20px;
+    font-weight: 400;
+}
+
 .sourceNodeTitle,
 .edgeTitle,
 .destinationNodeTitle {
@@ -379,6 +418,7 @@ input[type='checkbox'] {
 .importFeedback {
     font-size: 1.3rem;
     margin-bottom: 32px;
+    margin-top: 16px;
 }
 
 .buttonSpaceBetween {

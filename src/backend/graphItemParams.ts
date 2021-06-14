@@ -26,7 +26,6 @@ export class GraphItemParams {
       !req.body.destinationType ||
       typeof req.body.destinationType !== 'string'
     ) {
-      console.log({body: req.body});
       throw new Error('Invalid parameters');
     }
     return req.body as unknown as ImportEdgesParams;

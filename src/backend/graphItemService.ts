@@ -1,4 +1,3 @@
-
 import {RestClient} from '@linkurious/rest-client';
 import {GroupedErrors, parseCSV, RowErrorMessage} from './utils';
 import {ImportEdgesParams, ImportItemsResponse, ImportNodesParams} from '../@types/shared';
@@ -42,7 +41,6 @@ export class GraphItemService {
           });
         }
 
-        console.log({response});
         if (!response.isSuccess()) {
           errors.add(response, i);
         }
@@ -61,7 +59,7 @@ export class GraphItemService {
     return {
       success: i - errors.total,
       failed: errors.total,
-      error: errors.toString()
+      error: errors.toObject()
     };
   }
 
@@ -91,7 +89,6 @@ export class GraphItemService {
   ): Record<string, string> {
     // There should not be more values than headers
     if (rowValues.length > headers.length) {
-      console.log({rowValues, headers});
       throw new Error(RowErrorMessage.TOO_MANY_VALUES);
     }
     const properties: Record<string, string> = {};
@@ -129,7 +126,6 @@ export class GraphItemService {
         // We return the id if the was found, in any other case we fail with SOURCE_TARGET_NOT_FOUND
         return res.body.nodes[0].id;
       }
-      console.log(query, res.body);
     } catch (e) {
       console.log(query, e);
     }

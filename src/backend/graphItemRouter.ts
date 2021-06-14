@@ -7,7 +7,7 @@ import {Request} from 'express';
 import {GraphItemService} from './graphItemService';
 
 export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): void {
-  options.router.use(bodyParser.json({limit: '4mb', extended: true} as any));
+  options.router.use(bodyParser.json({limit: '6mb', extended: true} as any));
 
   options.router.post(
     '/importNodes',

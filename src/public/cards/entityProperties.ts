@@ -1,5 +1,6 @@
 import {EntitiesTypes} from "../models";
 import * as utils from "../utils";
+import {ImportItemsResponse} from "../../@types/shared";
 
 /**
  * Class that handles all the logic for the entity properties card
@@ -51,7 +52,7 @@ export class CSVEntityProperties {
         },
         0
       );
-      headersFinal.forEach((header) => {
+      headersFinal.forEach((header: string) => {
         this.addProperty(header);
       });
     }
@@ -80,20 +81,16 @@ export class CSVEntityProperties {
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<string> {
+  ): Promise<ImportItemsResponse> {
     utils.startWaiting();
     try {
-      if (entityName && sourceKey) {
-        const resNodes = await utils.makeRequest("POST", "api/importNodes", {
-          sourceKey: sourceKey,
-          itemType: entityName,
-          csv: csv
-        });
+      const resNodes = await utils.makeRequest("POST", "api/importNodes", {
+        sourceKey: sourceKey,
+        itemType: entityName,
+        csv: csv
+      });
 
-        const data = JSON.parse(resNodes.response);
-        return `${data.success}/${data.total} nodes have been added to the database`;
-      }
-      return "";
+      return JSON.parse(resNodes.response);
     } catch (error) {
       throw new Error("Import has failed");
     } finally {
@@ -102,14 +99,12 @@ export class CSVEntityProperties {
   }
 
   async nextStep(
-    entityType: EntitiesTypes,
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<string | undefined> {
+  ): Promise<ImportItemsResponse> {
     this.hideCard();
-    return entityType === EntitiesTypes.nodes ?
-      this.importNodes(csv, entityName, sourceKey) : undefined;
+    return this.importNodes(csv, entityName, sourceKey);
   }
 
   hideCard() {

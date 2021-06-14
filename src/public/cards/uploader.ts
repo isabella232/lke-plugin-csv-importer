@@ -1,6 +1,6 @@
 import {startWaiting, stopWaiting} from "../utils";
 
-const FILE_SIZE_LIMIT = 2 * Math.pow(10, 6);
+const FILE_SIZE_LIMIT = 3.5 * Math.pow(10, 6);
 
 /**
  * All logic related to the first card (uploading .csv file)
