@@ -19,7 +19,7 @@
     "tsc": "tsc -b",
     "clean": "rm -rf csv-importer.lke",
     "copy-assets": "cp -R src/public/assets csv-importer.lke/public && cp src/public/index.html csv-importer.lke/public",
-    "installProduction": "cp package.json csv-importer.lke",
+    "installProduction": "cp package.json csv-importer.lke &&  cp -R  node_modules csv-importer.lke/node_modules  ",
     "copyManifest": "cp -R src/manifest.json csv-importer.lke/",
     "lint:ci-deactivated": "eslint -f checkstyle -o reports/checkstyle.xml  .",
     "build:project": "npm-run-all build:public build:backend copyManifest",
