@@ -8,6 +8,7 @@
   "files": [
     "backend/**/**.js",
     "public/**.js",
+    "public/**.html",
     "public/assets/**",
     "manifest.json",
     "package.json"

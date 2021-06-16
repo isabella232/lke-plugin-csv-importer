@@ -66,6 +66,7 @@ function main() {
   showExampleButton.addEventListener("click", () => {
     uploader.hideCard();
     csvFileStructureExample.showCard();
+    csvFileStructureExample.showImageExample(EntityType.NODE);
   });
 
   // CSV example screen event handler

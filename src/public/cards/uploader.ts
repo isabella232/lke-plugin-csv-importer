@@ -60,6 +60,8 @@ export class CSVUploader {
         throw Error('File exceeds the 3.5MB limit\n');
       } else {
         this.readButton.disabled = false;
+        this.fileName.style.cursor = 'pointer';
+
       }
     }
   }
@@ -135,5 +137,7 @@ export class CSVUploader {
     }
     this.container.style.display = "block";
     this.readButton.disabled = true;
+    this.fileName.style.cursor = 'auto';
+
   }
 }
