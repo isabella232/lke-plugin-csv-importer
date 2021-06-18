@@ -17,32 +17,9 @@ Feedbacks or bugs? Please, [contact us](mailto:support@linkurio.us)
 4. [Sample files](#4-sample-files)
 
 ## 1. Introduction
-With this plugin, we want to provide an easy tool for importing data into your datasource, even if you're not a cypher query language expert: no knowledge is required.
+This plugin allows you to import data into an empty database even if you're not a cypher query language expert: no knowledge of which is required.
 
-The information of nodes and edges need to be stored in a *comma separated file* (also known as *csv* file); every single line of the file should follow this syntax:
-
-```
-property_1,property_2,...,property_n
-```
-
-where `property_x` is:
-- a `number`: an integer or a float (`.` must be used as decimal separator);
-- a `string`: they can be defined with or without `"` (or `'`) delimiters;
-- a `date` (or `datetime`);
-- a `boolean`;
-
-NOTE: regardless of the type, at the moment it's not possible to include a `,` in the value of a property.
-
-It's possible to include an *header* containing the names of the property. The header must be the first line of the file and it follow the same syntax as the property values.
-
-Example: *sample.csv*
-
-```
-first_name,last_name,age,country
-Roosvelt,Anderson,42,"US"
-Julianne,Redmond,35,"GB"
-Ginevra,Spacey,87,"AU"
-```
+The information of nodes and edges need to be stored in a *comma separated file* (also known as *csv* file) separately
 
 ## 2. Installation
 
@@ -98,32 +75,88 @@ Otherwise, go to step 6
 
 ## 3. How to import data
 
-1. Open a visualization
+### 3.1 Structure of the CSV File
 
-2. Execute the `Import data` custom action
+#### 3.1.1 Nodes File
 
-3. Select the *csv* file from your computer and select the checkbox if this contains an *header*
+1. The filename is the node category.
 
-4. Click on `Load this file`
+2. The headers are the node property names.
 
-5. If the loaded file contains Nodes, click on `Add a Node`, otherwise click on `Add an Edge` \
-NOTE: it's possible to add multiple nodes categories and edges types at the same time
+3. The first column is the node ID and should be named UID.
 
-6. Set a label for the Node (or Edge)
+4. The succeeding columns are the node properties.
 
-7. If necessary, add or remove some properties
+#### 3.1.2 Edges File
 
-8. If necessary, adjust the mappings: select the correct column and give it the desired name
+1. The filename is the edge type.
 
-9. In case of edges, select the correct identifiers for the source and destination nodes
+2. The headers are the edge property names.
 
-10. Click on `Run`
+3. The first column is the source node ID.
 
-11. After the execution, click on `Load another CSV` if you need to import another file, or click on `Index datasource` to be redirected to Linkurious Enterprise
+4. The second column is the destination node ID.
 
-12. Done!
+5. The succeeding columns are the edge properties.
 
-## 4. Sample files
+### 3.2 Import data
+
+1. Open a visualization.
+
+2. Execute the `Import data` custom action.
+
+3. Browse for the CSV file. Click the Upload button.
+
+4. Choose which entity to upload: nodes or edges.
+
+5. Validate that the node category/ edge type name is correct
+
+6. Validate that the property names are correct
+
+7. For edges, input the source node and destination node categories where the edge is connected to.
+
+8. Click import. The result will either be successful, failed, or incomplete.
+
+### 3.3 Import status
+
+1. Successful: All nodes/ edges have been imported.
+
+2. Failed: Nothing has been imported.
+
+3. Incomplete: Some nodes failed to import due to one of the following reasons:
+
+   a. Schema non-compliant data
+      The schema type has phone as number, but in the csv the value of phone is a string. Same for date or booleans or other incompatible types
+
+   b. Unexpected properties (in strict schema)
+      If the schema type has name and phone, but in your csv you have the headers name, phone, email, then it will fail for email
+
+   c. Missing required properties
+      If the schema type has phone as required, but your csv has only name
+
+   d. Too many or missing header values
+      Your header has 3 property names, but some rows have less than 3 or more than 3 comma-separated values
+
+   e. Source or target node does not exist
+
+   f. Data-source is not available (including read-only)
+      Either is offline or you have no rights to see that datasource
+
+   g. Unauthorized access to the data-source
+      Plausible if your session has been revoked)
+      
+   h. Error unknown
+      Default message if error is not known
+
+## 4. Limitations
+
+1. The file size limit is currently set to 80KB.
+
+2. The plugin only allows for CSV format.
+
+3. The node category name, edge type name, and properties cannot be edited from the UI.
+
+## 5. Sample files
 
 Two sample CSV files are available [here](https://github.com/Linkurious/lke-plugin-csv-importer/tree/master/sample%20csv):
 - `person.csv` contains information about person entities (a *node*);
