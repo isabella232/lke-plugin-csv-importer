@@ -6,7 +6,6 @@ import {
   CSVEdgeMapping,
   CSVImportFeedback,
 } from "./cards";
-import {EntitiesTypes} from "./models";
 import * as utils from "./utils";
 import {CSVFileStructureExample} from "./cards/fileStructureExample";
 import {EntityType} from "@linkurious/rest-client";
@@ -131,7 +130,7 @@ function main() {
       entityName,
       sourceKey
     );
-    entityPicker.entityType === EntitiesTypes.nodes
+    addNodeResponse !== undefined
       ? importFeedback.showCard(addNodeResponse)
       : edgeMapping.showCard();
   });

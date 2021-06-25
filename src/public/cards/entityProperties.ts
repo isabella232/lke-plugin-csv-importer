@@ -12,8 +12,7 @@ export class CSVEntityProperties {
   private entityProperties!: HTMLElement;
   private titleHolder!: HTMLElement;
   private nextButton!: HTMLButtonElement;
-
-  private largestPropertyLength = 0;
+  private entityType!: EntitiesTypes;
 
   private titleCompleter = ["node", "edge"];
 
@@ -46,12 +45,6 @@ export class CSVEntityProperties {
         entityType === EntitiesTypes.nodes
           ? headersParsed
           : headersParsed.slice(2);
-      this.largestPropertyLength = headersFinal.reduce(
-        (maxLength: number, header: string) => {
-          return header.length > maxLength ? header.length : maxLength;
-        },
-        0
-      );
       headersFinal.forEach((header: string) => {
         this.addProperty(header);
       });
@@ -70,7 +63,6 @@ export class CSVEntityProperties {
     const newProperty = document.createElement("div");
     newProperty.innerText = name;
     newProperty.className = "nodeProperty";
-    newProperty.style.width = `${this.largestPropertyLength * 10}px`;
     this.entityProperties.append(newProperty);
   }
 
@@ -98,13 +90,15 @@ export class CSVEntityProperties {
     }
   }
 
-  async nextStep(
+  nextStep(
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<ImportItemsResponse> {
+  ): Promise<ImportItemsResponse> | void {
     this.hideCard();
-    return this.importNodes(csv, entityName, sourceKey);
+    if (this.entityType === EntitiesTypes.nodes) {
+      return this.importNodes(csv, entityName, sourceKey);
+    }
   }
 
   hideCard() {
@@ -116,6 +110,7 @@ export class CSVEntityProperties {
     propertiesName?: string,
   ) {
     if (entityType !== undefined) {
+      this.entityType = entityType;
       this.setTitle(entityType);
       this.setNameProperties(entityType, propertiesName);
       this.setButtonName(entityType);

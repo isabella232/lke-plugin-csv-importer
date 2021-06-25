@@ -12,7 +12,8 @@ function startWaiting() {
   let overlay = document.createElement("div");
   overlay.className = "overlay";
   overlay.innerHTML =
-    '<div class="opacity"></div><div class="highlight"></div>';
+    '<div class="opacity"></div><div class="highlight"></div>' +
+    '<div class="import-info">Currently importing data…</div>';
   document.body.appendChild(overlay);
   spinner.spin(document.getElementsByClassName("highlight")[0]);
 }

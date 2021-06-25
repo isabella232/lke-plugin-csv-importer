@@ -60,8 +60,7 @@ export class CSVUploader {
         throw Error('File exceeds the 3.5MB limit\n');
       } else {
         this.readButton.disabled = false;
-        this.fileName.style.cursor = 'pointer';
-
+        this.readButton.style.cursor = 'pointer';
       }
     }
   }
@@ -134,10 +133,12 @@ export class CSVUploader {
   showCard(fromPrevious?: boolean) {
     if (!fromPrevious) {
       this.fileName.style.display = 'none';
+      this.readButton.disabled = true;
+      this.readButton.style.cursor = 'default';
+      this.fileSizeLimit.style.display = 'block'
     }
     this.container.style.display = "block";
-    this.readButton.disabled = true;
-    this.fileName.style.cursor = 'auto';
+
 
   }
 }

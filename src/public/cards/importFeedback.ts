@@ -25,11 +25,13 @@ export class CSVImportFeedback {
   }
 
   setFeedback(feedback: ImportItemsResponse, isEdge?: boolean) {
+    this.importStatus.classList.remove('success', 'failed', 'incomplete')
     const total = feedback.success + (feedback.failed ? feedback.failed : 0);
     const item = isEdge ? 'edges' : 'nodes';
     let errors = '';
-    Object.entries(feedback.error || {}).forEach(([key, value]) => {
-      errors += key + '\n' + `${value.length === 1 ? 'Row' : 'Rows'}: ${value.join(', ')} \n\n`;
+    Object.entries(feedback.error || {}).forEach(([key, value], index) => {
+      const jumpLine = Object.entries(feedback.error || {}).length === index + 1 ? '.' : ' \n\n';
+      errors += key + '\n' + `${value.length === 1 ? 'Row' : 'Rows'}: ${value.join(', ')}${jumpLine}`;
     });
     switch (total) {
       case feedback.success:
@@ -56,8 +58,7 @@ export class CSVImportFeedback {
         this.importStatus.classList.add('incomplete');
 
         this.importErrorHelp.style.display = 'block';
-        this.importErrorHelp.style.display = `Re-upload only the failed ${feedback.failed === 1 ? 'row' : 'rows'}`;
-        this.importErrorHelp.innerText = 'Import incomplete';
+        this.importErrorHelp.innerText = `Re-upload only the failed ${feedback.failed === 1 ? 'row' : 'rows'}`;
 
         this.importError.innerText = errors;
         this.importError.style.display = 'block';
