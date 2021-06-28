@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "tsBuildInfoFile": "../../csv-importer.lke/buildcache/public.tsbuildinfo",
+    "declarationDir": "../../csv-importer.lke/public"
+  },
+  "include": [
+    "**/*.ts"
+  ]
+}

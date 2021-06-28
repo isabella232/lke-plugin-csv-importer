@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "outDir": "../../csv-importer.lke/backend",
+    "tsBuildInfoFile": "../../csv-importer.lke/buildcache/backend.tsbuildinfo",
+    "declarationDir": "../../csv-importer.lke/backend"
+  },
+  "include": [
+    "**/*.ts"
+  ]
+}
