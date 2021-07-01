@@ -3,11 +3,16 @@ import {GroupedErrors, parseCSV, RowErrorMessage} from './utils';
 import {ImportEdgesParams, ImportItemsResponse, ImportNodesParams} from '../@types/shared';
 
 export class GraphItemService {
-  public static async importGraphItems(
+
+  public importResult: ImportItemsResponse | undefined;
+
+  public async importGraphItems(
     params: ImportNodesParams | ImportEdgesParams,
     rc: RestClient,
     isEdge: boolean
-  ): Promise<ImportItemsResponse> {
+  ): Promise<void> {
+    const fileLength = params.csv.length;
+    let importedLength = 0;
     const csv = parseCSV(params.csv);
     const headers = GraphItemService.checkNonEmptyHeaders(csv);
 
@@ -16,6 +21,7 @@ export class GraphItemService {
 
     let i = 0;
     for (const rowValues of csv) {
+      importedLength += rowValues.reduce((c, value) => c + value.length, 0)
       i++;
       try {
         // Merge headers with rowValues
@@ -47,20 +53,30 @@ export class GraphItemService {
       } catch (e) {
         console.log({e});
         errors.add(e.message, i);
+      } finally {
+        this.importResult = {
+          status: 'importing',
+          progress: Math.floor(importedLength * 100 / fileLength),
+          success: i - errors.total,
+          failed: errors.total,
+          error: errors.toObject()
+        }
       }
     }
 
     if (errors.total === 0) {
-      return {
+      this.importResult = {
+        status: 'done',
         success: i
+      }
+    } else {
+      this.importResult = {
+        status: 'done',
+        success: i - errors.total,
+        failed: errors.total,
+        error: errors.toObject()
       };
     }
-
-    return {
-      success: i - errors.total,
-      failed: errors.total,
-      error: errors.toObject()
-    };
   }
 
   /**
