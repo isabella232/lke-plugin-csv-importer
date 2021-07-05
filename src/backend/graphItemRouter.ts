@@ -8,24 +8,44 @@ import {GraphItemService} from './graphItemService';
 
 export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): void {
   options.router.use(bodyParser.json({limit: '6mb', extended: true} as any));
-
+  const graphItemService = new GraphItemService();
   options.router.post(
     '/importNodes',
     respond((req: Request) => {
-      req.setTimeout(600000)
-      const rc = options.getRestClient(req);
-      const params = GraphItemParams.checkImportNodes(req);
-      return GraphItemService.importGraphItems(params, rc, false);
+      if (graphItemService.importResult?.status === 'importing') {
+        return Promise.reject({message: 'Another import is ongoing'})
+      } else {
+        const rc = options.getRestClient(req);
+        const params = GraphItemParams.checkImportNodes(req);
+
+        void graphItemService.importGraphItems(params, rc, false);
+        return Promise.resolve({message: 'import started'})
+      }
+    })
+  );
+
+  options.router.post(
+    '/importStatus',
+    respond(() => {
+      const result = {...graphItemService.importResult}
+      if (result.status === 'done') {
+        graphItemService.importResult = undefined
+      }
+      return Promise.resolve(result);
     })
   );
 
   options.router.post(
     '/importEdges',
     respond((req: Request) => {
-      req.setTimeout(600000)
-      const rc = options.getRestClient(req);
-      const params = GraphItemParams.checkImportEdges(req);
-      return GraphItemService.importGraphItems(params, rc, true);
+      if (graphItemService.importResult?.status === 'importing') {
+        return Promise.reject({message: 'Another import is ongoing'})
+      } else {
+        const rc = options.getRestClient(req);
+        const params = GraphItemParams.checkImportEdges(req);
+        void graphItemService.importGraphItems(params, rc, false);
+        return Promise.resolve({message: 'import started'})
+      }
     })
   );
 };

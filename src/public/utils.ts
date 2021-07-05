@@ -9,13 +9,18 @@ const spinner = new Spinner();
  * Show spinner on top of page
  */
 function startWaiting() {
-  let overlay = document.createElement("div");
+  const overlay = document.createElement("div");
   overlay.className = "overlay";
   overlay.innerHTML =
     '<div class="opacity"></div><div class="highlight"></div>' +
-    '<div class="import-info">Currently importing data…</div>';
+    '<div id="importInfo" class="import-info">Currently importing data…</div>';
   document.body.appendChild(overlay);
   spinner.spin(document.getElementsByClassName("highlight")[0]);
+}
+
+function updateProgress(progress: number | undefined) {
+  const info = document.getElementById("importInfo");
+  info!.innerHTML = `Currently importing data ${progress}%`
 }
 
 /**
@@ -90,4 +95,5 @@ export {
   goToLinkurious,
   removeChildrenOf,
   makeRequest,
+  updateProgress
 };

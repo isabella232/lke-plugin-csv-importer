@@ -13,7 +13,6 @@ export class CSVEntityProperties {
   private titleHolder!: HTMLElement;
   private nextButton!: HTMLButtonElement;
   private entityType!: EntitiesTypes;
-
   private titleCompleter = ["node", "edge"];
 
   init() {
@@ -76,18 +75,33 @@ export class CSVEntityProperties {
   ): Promise<ImportItemsResponse> {
     utils.startWaiting();
     try {
-      const resNodes = await utils.makeRequest("POST", "api/importNodes", {
+      await utils.makeRequest("POST", "api/importNodes", {
         sourceKey: sourceKey,
         itemType: entityName,
         csv: csv
       });
-
-      return JSON.parse(resNodes.response);
+      return await this.importListener()
     } catch (error) {
       throw new Error("Import has failed");
     } finally {
       utils.stopWaiting();
     }
+  }
+
+  async importListener(): Promise<ImportItemsResponse> {
+    return new Promise((resolve) => {
+      setTimeout(async () => {
+        const response = await utils.makeRequest("POST", "api/importStatus", {});
+        const parsedResponse: ImportItemsResponse = JSON.parse(response.response);
+        if (parsedResponse.status === 'done') {
+          resolve(parsedResponse)
+        } else {
+          utils.updateProgress(parsedResponse.progress);
+          resolve(await this.importListener())
+        }
+      }, 1000)
+    })
+
   }
 
   nextStep(
