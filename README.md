@@ -5,7 +5,7 @@ The CSV importer is an official plugin maintained by the Linkurious team that al
 external data from a CSV file into Linkurious Enterprise. It makes it possible to transform tabular
 data into rich graph visualizations quickly.
 
-TODO screenshot plugin
+![](readme_assets/plugin.png)
 
 ### Prerequisites
 - Linkurious Enterprise 2.9.x or above
@@ -13,11 +13,11 @@ TODO screenshot plugin
 
 #### for nodes
 
-TODO Picture for node
+![](src/public/assets/img/node.png)
 
 #### for edges
 
-TODO Picture for edge description
+![](src/public/assets/img/edge.png)
 
 Two sample CSV files, for nodes and edges, are available [here](https://github.com/Linkurious/lke-plugin-csv-importer/tree/master/sample%20csv):
 - `person.csv` contains information about person entities (a *node*);
@@ -26,8 +26,6 @@ Two sample CSV files, for nodes and edges, are available [here](https://github.c
 ## Set up the Plugin
 
 > Make sure to have write access to the folder of Linkurious Enterprise as well as a Linkurious admin account.
-
-// TODO modify the name of the released artifact
 
 1. Download the `csv-importer.lke` plugin available [here](https://github.com/Linkurious/lke-plugin-csv-importer/releases/tag/v1.0.0).
 2. Copy `csv-importer.lke` file to the following path `<linkurious>/data/plugins`
@@ -50,7 +48,7 @@ Two sample CSV files, for nodes and edges, are available [here](https://github.c
 To access the plugin you need to create a custom action that will appears in right-click context menu within the Linkurious 
 Enterprise UI.
 
-TODO add screenshot + arrow
+![](readme_assets/customaction.png)
 
 In order to do so:
 
@@ -102,9 +100,7 @@ After the import, you will get one of the following results:
 
 ## Limitations
 
-The maximum file size currently supported is 2.5MB.
-
-TODO check value
+The maximum file size currently supported is 3.5MB.
 
 ## Licensing
 The Linkurious CSV importer plugin is licensed under the Apache License, Version 2.0. See LICENSE for the full license text.
