@@ -9,13 +9,13 @@ data into rich graph visualizations quickly.
 
 ### Prerequisites
 - Linkurious Enterprise 2.9.x or above
-- CSV files containing nodes and edges structured as follows:
+- CSV files containing nodes or edges structured as follows:
 
-#### for nodes
+#### For nodes
 
 ![](src/public/assets/img/node.png)
 
-#### for edges
+#### For edges
 
 ![](src/public/assets/img/edge.png)
 
@@ -29,14 +29,13 @@ Two sample CSV files, for nodes and edges, are available [here](https://github.c
 
 1. Download the `csv-importer.lke` plugin available [here](https://github.com/Linkurious/lke-plugin-csv-importer/releases/tag/v1.0.0).
 2. Copy `csv-importer.lke` file to the following path `<linkurious>/data/plugins`
-3. Restart Linkurious Enteprise
-4. From the Linkurious Enterprise dashboard, go to `Admin` -> `Global configuration`
-5. Scroll to the `Plugin settings` field
-6. On the `Plugin settings` section, modify the content as follows:
+3. From the Linkurious Enterprise dashboard, go to `Admin` -> `Global configuration`
+4. Scroll to the `Plugin settings` field
+5. On the `Plugin settings` section, modify the content as follows:
 
     ```json
     {
-      "importer": {
+      "csv-importer": {
         "basePath": "importer"
       }
     }
@@ -45,7 +44,7 @@ Two sample CSV files, for nodes and edges, are available [here](https://github.c
 
 ## Access the plugin
 
-To access the plugin you need to create a custom action that will appears in right-click context menu within the Linkurious 
+To access the plugin it's recommended to create a custom action that will appears in right-click context menu within the Linkurious 
 Enterprise UI.
 
 ![](readme_assets/customaction.png)
@@ -58,6 +57,9 @@ In order to do so:
 4. Fill the `URL template` field with the following URL: `{{baseurl}}plugins/importer/index.html?sourceKey={{sourcekey}}`
 5. (Optional) Share the Custom Action with all users
 6. Click on `SAVE`
+
+> If you prefer to access the plugin directly via URL, you need to retrieve the sourceKey and replace it within the link:
+> https://<your-linkurious-instance>/plugins/importer/index.html?sourceKey=<sourceKey>
 
 ## Use the plugin
 
