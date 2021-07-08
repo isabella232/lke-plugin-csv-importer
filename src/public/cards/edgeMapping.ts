@@ -1,5 +1,6 @@
 import {CategoriesMapping} from "../models";
 import * as utils from "../utils";
+import {ImportItemsResponse} from "../../@types/shared";
 
 /**
  * Class that handles all logic related to the edge mapping card
@@ -44,25 +45,21 @@ export class CSVEdgeMapping {
     categoriesMapping: CategoriesMapping,
     entityName?: string,
     sourceKey?: string
-  ): Promise<string> {
+  ): Promise<ImportItemsResponse> {
     utils.startWaiting();
     try {
-      if (entityName && sourceKey) {
-        const resNodes = await utils.makeRequest(
-          "POST",
-          "api/importEdges",
-          {
-            sourceKey: sourceKey,
-            itemType: entityName,
-            csv: csv,
-            sourceType: categoriesMapping.source,
-            destinationType: categoriesMapping.destination
-          }
-        );
-        const data = JSON.parse(resNodes.response);
-        return `${data.success}/${data.total} edges have been added to the database`;
-      }
-      return "";
+      const resNodes = await utils.makeRequest(
+        "POST",
+        "api/importEdges",
+        {
+          sourceKey: sourceKey,
+          itemType: entityName,
+          csv: csv,
+          sourceType: categoriesMapping.source,
+          destinationType: categoriesMapping.destination
+        }
+      );
+      return JSON.parse(resNodes.response);
     } catch (error) {
       throw new Error("Import has failed");
     } finally {
@@ -74,7 +71,7 @@ export class CSVEdgeMapping {
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<string> {
+  ): Promise<ImportItemsResponse> {
     const feedback = await this.importEdges(
       csv,
       {

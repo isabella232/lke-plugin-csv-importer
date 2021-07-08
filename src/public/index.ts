@@ -6,7 +6,6 @@ import {
   CSVEdgeMapping,
   CSVImportFeedback,
 } from "./cards";
-import {EntitiesTypes} from "./models";
 import * as utils from "./utils";
 import {CSVFileStructureExample} from "./cards/fileStructureExample";
 import {EntityType} from "@linkurious/rest-client";
@@ -66,6 +65,7 @@ function main() {
   showExampleButton.addEventListener("click", () => {
     uploader.hideCard();
     csvFileStructureExample.showCard();
+    csvFileStructureExample.showImageExample(EntityType.NODE);
   });
 
   // CSV example screen event handler
@@ -125,14 +125,13 @@ function main() {
     entityNameCard.showCard(undefined, entityName);
   });
   nextButtonProps.addEventListener("click", async () => {
-    const feedback = await entityProperties.nextStep(
-      entityPicker.entityType!,
+    const addNodeResponse = await entityProperties.nextStep(
       csv,
       entityName,
       sourceKey
     );
-    entityPicker.entityType === EntitiesTypes.nodes
-      ? importFeedback.showCard(feedback as string)
+    addNodeResponse !== undefined
+      ? importFeedback.showCard(addNodeResponse)
       : edgeMapping.showCard();
   });
 
@@ -148,11 +147,12 @@ function main() {
     entityProperties.showCard();
   });
   importButtonEdge.addEventListener("click", async () => {
-    importFeedback.showCard(await edgeMapping.importAndFeedback(
+    const importResult = await edgeMapping.importAndFeedback(
       csv,
       entityName,
       sourceKey
-    ));
+    )
+    importFeedback.showCard(importResult, true);
   });
 
   // import feedback event handler

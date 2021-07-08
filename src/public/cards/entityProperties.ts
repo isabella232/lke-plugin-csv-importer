@@ -1,5 +1,6 @@
 import {EntitiesTypes} from "../models";
 import * as utils from "../utils";
+import {ImportItemsResponse} from "../../@types/shared";
 
 /**
  * Class that handles all the logic for the entity properties card
@@ -11,9 +12,7 @@ export class CSVEntityProperties {
   private entityProperties!: HTMLElement;
   private titleHolder!: HTMLElement;
   private nextButton!: HTMLButtonElement;
-
-  private largestPropertyLength = 0;
-
+  private entityType!: EntitiesTypes;
   private titleCompleter = ["node", "edge"];
 
   init() {
@@ -45,13 +44,7 @@ export class CSVEntityProperties {
         entityType === EntitiesTypes.nodes
           ? headersParsed
           : headersParsed.slice(2);
-      this.largestPropertyLength = headersFinal.reduce(
-        (maxLength: number, header: string) => {
-          return header.length > maxLength ? header.length : maxLength;
-        },
-        0
-      );
-      headersFinal.forEach((header) => {
+      headersFinal.forEach((header: string) => {
         this.addProperty(header);
       });
     }
@@ -69,7 +62,6 @@ export class CSVEntityProperties {
     const newProperty = document.createElement("div");
     newProperty.innerText = name;
     newProperty.className = "nodeProperty";
-    newProperty.style.width = `${this.largestPropertyLength * 10}px`;
     this.entityProperties.append(newProperty);
   }
 
@@ -80,20 +72,15 @@ export class CSVEntityProperties {
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<string> {
+  ): Promise<ImportItemsResponse> {
     utils.startWaiting();
     try {
-      if (entityName && sourceKey) {
-        const resNodes = await utils.makeRequest("POST", "api/importNodes", {
-          sourceKey: sourceKey,
-          itemType: entityName,
-          csv: csv
-        });
-
-        const data = JSON.parse(resNodes.response);
-        return `${data.success}/${data.total} nodes have been added to the database`;
-      }
-      return "";
+      await utils.makeRequest("POST", "api/importNodes", {
+        sourceKey: sourceKey,
+        itemType: entityName,
+        csv: csv
+      });
+      return await this.importListener()
     } catch (error) {
       throw new Error("Import has failed");
     } finally {
@@ -101,15 +88,31 @@ export class CSVEntityProperties {
     }
   }
 
-  async nextStep(
-    entityType: EntitiesTypes,
+  async importListener(): Promise<ImportItemsResponse> {
+    return new Promise((resolve) => {
+      setTimeout(async () => {
+        const response = await utils.makeRequest("POST", "api/importStatus", {});
+        const parsedResponse: ImportItemsResponse = JSON.parse(response.response);
+        if (parsedResponse.status === 'done') {
+          resolve(parsedResponse)
+        } else {
+          utils.updateProgress(parsedResponse.progress);
+          resolve(await this.importListener())
+        }
+      }, 1000)
+    })
+
+  }
+
+  nextStep(
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<string | undefined> {
+  ): Promise<ImportItemsResponse> | void {
     this.hideCard();
-    return entityType === EntitiesTypes.nodes ?
-      this.importNodes(csv, entityName, sourceKey) : undefined;
+    if (this.entityType === EntitiesTypes.nodes) {
+      return this.importNodes(csv, entityName, sourceKey);
+    }
   }
 
   hideCard() {
@@ -121,6 +124,7 @@ export class CSVEntityProperties {
     propertiesName?: string,
   ) {
     if (entityType !== undefined) {
+      this.entityType = entityType;
       this.setTitle(entityType);
       this.setNameProperties(entityType, propertiesName);
       this.setButtonName(entityType);

@@ -1,6 +1,6 @@
 import {startWaiting, stopWaiting} from "../utils";
 
-const FILE_SIZE_LIMIT = 2 * Math.pow(10, 6);
+const FILE_SIZE_LIMIT = 3.5 * Math.pow(10, 6);
 
 /**
  * All logic related to the first card (uploading .csv file)
@@ -60,6 +60,7 @@ export class CSVUploader {
         throw Error('File exceeds the 3.5MB limit\n');
       } else {
         this.readButton.disabled = false;
+        this.readButton.style.cursor = 'pointer';
       }
     }
   }
@@ -132,8 +133,12 @@ export class CSVUploader {
   showCard(fromPrevious?: boolean) {
     if (!fromPrevious) {
       this.fileName.style.display = 'none';
+      this.readButton.disabled = true;
+      this.readButton.style.cursor = 'default';
+      this.fileSizeLimit.style.display = 'block'
     }
     this.container.style.display = "block";
-    this.readButton.disabled = true;
+
+
   }
 }
