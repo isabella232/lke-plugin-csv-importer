@@ -1,6 +1,20 @@
 import {Request, Response} from 'express';
 import {LkError, LkErrorKey, Response as LkResponse} from '@linkurious/rest-client';
 
+export class Logger {
+  private readonly filename: string;
+  constructor(filename: string) {
+    this.filename = filename;
+    this.info = this.info.bind(this);
+  }
+
+  info(message: unknown): void {
+    console.log(`${new Date().toISOString()} ${this.filename} ${JSON.stringify(message)}`);
+  }
+}
+
+const {info} = new Logger(__filename);
+
 /**
  * Same as input.split(/\r?\n/).map(row => row.split(',') but lazy
  * It does not take care of escaping commas, line-breaks, etc...
@@ -92,23 +106,22 @@ export class GroupedErrors extends Map<string, number[]> {
       return RowErrorMessage.DATA_SOURCE_UNAVAILABLE;
     }
     if (key === LkErrorKey.UNAUTHORIZED) {
-      return RowErrorMessage.UNAUTHORIZED
+      return RowErrorMessage.UNAUTHORIZED;
     }
 
     return RowErrorMessage.UNEXPECTED;
   }
 }
 
-export function respond(
-  asyncHandler: (req: Request) => Promise<{[k: string]: unknown}>
-) {
+export function respond(asyncHandler: (req: Request) => Promise<{[k: string]: unknown}>) {
   return async (req: Request, res: Response): Promise<void> => {
     try {
       const body = await asyncHandler(req);
+      info(body);
       res.status(200);
       res.json(body);
     } catch (e) {
-      console.log(e);
+      info(e);
       // We don't really care about the status code
       res.status(400);
       res.json({

@@ -13,13 +13,13 @@ export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): vo
     '/importNodes',
     respond((req: Request) => {
       if (graphItemService.importResult?.status === 'importing') {
-        return Promise.reject({message: 'Another import is ongoing'})
+        return Promise.reject({message: 'Another import is ongoing'});
       } else {
         const rc = options.getRestClient(req);
         const params = GraphItemParams.checkImportNodes(req);
 
         void graphItemService.importGraphItems(params, rc, false);
-        return Promise.resolve({message: 'import started'})
+        return Promise.resolve({message: 'import started'});
       }
     })
   );
@@ -27,9 +27,9 @@ export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): vo
   options.router.post(
     '/importStatus',
     respond(() => {
-      const result = {...graphItemService.importResult}
+      const result = {...graphItemService.importResult};
       if (result.status === 'done') {
-        graphItemService.importResult = undefined
+        graphItemService.importResult = undefined;
       }
       return Promise.resolve(result);
     })
@@ -39,12 +39,12 @@ export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): vo
     '/importEdges',
     respond((req: Request) => {
       if (graphItemService.importResult?.status === 'importing') {
-        return Promise.reject({message: 'Another import is ongoing'})
+        return Promise.reject({message: 'Another import is ongoing'});
       } else {
         const rc = options.getRestClient(req);
         const params = GraphItemParams.checkImportEdges(req);
-        void graphItemService.importGraphItems(params, rc, false);
-        return Promise.resolve({message: 'import started'})
+        void graphItemService.importGraphItems(params, rc, true);
+        return Promise.resolve({message: 'import started'});
       }
     })
   );

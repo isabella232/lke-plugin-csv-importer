@@ -6,7 +6,5 @@
     "tsBuildInfoFile": "../../csv-importer.lke/buildcache/backend.tsbuildinfo",
     "declarationDir": "../../csv-importer.lke/backend"
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"]
 }

@@ -15,5 +15,5 @@ export type ImportItemsResponse = {
   failed?: number;
   error?: Record<string, number[]>;
   status: 'importing' | 'done';
-  progress?: number
-}
+  progress?: number;
+};

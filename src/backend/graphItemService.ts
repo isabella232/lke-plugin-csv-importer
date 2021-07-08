@@ -1,9 +1,10 @@
 import {RestClient} from '@linkurious/rest-client';
-import {GroupedErrors, parseCSV, RowErrorMessage} from './utils';
+import {GroupedErrors, Logger, parseCSV, RowErrorMessage} from './utils';
 import {ImportEdgesParams, ImportItemsResponse, ImportNodesParams} from '../@types/shared';
 
-export class GraphItemService {
+const {info} = new Logger(__filename);
 
+export class GraphItemService {
   public importResult: ImportItemsResponse | undefined;
 
   public async importGraphItems(
@@ -21,7 +22,7 @@ export class GraphItemService {
 
     let i = 0;
     for (const rowValues of csv) {
-      importedLength += rowValues.reduce((c, value) => c + value.length, 0)
+      importedLength += rowValues.reduce((c, value) => c + value.length, 0);
       i++;
       try {
         // Merge headers with rowValues
@@ -48,19 +49,20 @@ export class GraphItemService {
         }
 
         if (!response.isSuccess()) {
+          info({badRowResponse: response});
           errors.add(response, i);
         }
       } catch (e) {
-        console.log({e});
+        info({rowError: e});
         errors.add(e.message, i);
       } finally {
         this.importResult = {
           status: 'importing',
-          progress: Math.floor(importedLength * 100 / fileLength),
+          progress: Math.floor((importedLength * 100) / fileLength),
           success: i - errors.total,
           failed: errors.total,
           error: errors.toObject()
-        }
+        };
       }
     }
 
@@ -68,7 +70,7 @@ export class GraphItemService {
       this.importResult = {
         status: 'done',
         success: i
-      }
+      };
     } else {
       this.importResult = {
         status: 'done',
@@ -142,8 +144,9 @@ export class GraphItemService {
         // We return the id if the was found, in any other case we fail with SOURCE_TARGET_NOT_FOUND
         return res.body.nodes[0].id;
       }
+      info({query: query, resBody: res.body});
     } catch (e) {
-      console.log(query, e);
+      info({query: query, reqError: e});
     }
     throw new Error(RowErrorMessage.SOURCE_TARGET_NOT_FOUND);
   }
