@@ -43,7 +43,7 @@ export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): vo
       } else {
         const rc = options.getRestClient(req);
         const params = GraphItemParams.checkImportEdges(req);
-        void graphItemService.importGraphItems(params, rc, false);
+        void graphItemService.importGraphItems(params, rc, true);
         return Promise.resolve({message: 'import started'});
       }
     })

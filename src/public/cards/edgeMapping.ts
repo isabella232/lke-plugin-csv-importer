@@ -48,7 +48,7 @@ export class CSVEdgeMapping {
   ): Promise<ImportItemsResponse> {
     utils.startWaiting();
     try {
-      const resNodes = await utils.makeRequest(
+      await utils.makeRequest(
         "POST",
         "api/importEdges",
         {
@@ -59,12 +59,28 @@ export class CSVEdgeMapping {
           destinationType: categoriesMapping.destination
         }
       );
-      return JSON.parse(resNodes.response);
+      return await this.importListener()
     } catch (error) {
       throw new Error("Import has failed");
     } finally {
       utils.stopWaiting();
     }
+  }
+
+  async importListener(): Promise<ImportItemsResponse> {
+    return new Promise((resolve) => {
+      setTimeout(async () => {
+        const response = await utils.makeRequest("POST", "api/importStatus", {});
+        const parsedResponse: ImportItemsResponse = JSON.parse(response.response);
+        if (parsedResponse.status === 'done') {
+          resolve(parsedResponse)
+        } else {
+          utils.updateProgress(parsedResponse.progress);
+          resolve(await this.importListener())
+        }
+      }, 1000)
+    })
+
   }
 
   async importAndFeedback(

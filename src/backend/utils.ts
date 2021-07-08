@@ -2,10 +2,14 @@ import {Request, Response} from 'express';
 import {LkError, LkErrorKey, Response as LkResponse} from '@linkurious/rest-client';
 
 export class Logger {
-  constructor(private readonly filename: string) {}
+  private readonly filename: string;
+  constructor(filename: string) {
+    this.filename = filename;
+    this.info = this.info.bind(this);
+  }
 
   info(message: unknown): void {
-    console.log(`${new Date().toISOString()} ${this.filename}`, message);
+    console.log(`${new Date().toISOString()} ${this.filename} ${JSON.stringify(message)}`);
   }
 }
 
@@ -113,11 +117,11 @@ export function respond(asyncHandler: (req: Request) => Promise<{[k: string]: un
   return async (req: Request, res: Response): Promise<void> => {
     try {
       const body = await asyncHandler(req);
-      info({respondBody: body});
+      info(body);
       res.status(200);
       res.json(body);
     } catch (e) {
-      info({respondError: e});
+      info(e);
       // We don't really care about the status code
       res.status(400);
       res.json({
