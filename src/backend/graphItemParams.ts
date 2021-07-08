@@ -1,4 +1,7 @@
 import {ImportEdgesParams, ImportNodesParams} from '../@types/shared';
+import {Logger} from './utils';
+
+const {info} = new Logger(__filename);
 
 export class GraphItemParams {
   public static checkImportNodes(req: {body?: Record<string, unknown>}): ImportNodesParams {
@@ -26,7 +29,7 @@ export class GraphItemParams {
       !req.body.destinationType ||
       typeof req.body.destinationType !== 'string'
     ) {
-      console.log({body: req.body});
+      info({reqBody: req.body});
       throw new Error('Invalid parameters');
     }
     return req.body as unknown as ImportEdgesParams;
