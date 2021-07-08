@@ -29,7 +29,7 @@ export class GraphItemParams {
       !req.body.destinationType ||
       typeof req.body.destinationType !== 'string'
     ) {
-      info({reqBody: req.body});
+      info({body: req.body});
       throw new Error('Invalid parameters');
     }
     return req.body as unknown as ImportEdgesParams;
