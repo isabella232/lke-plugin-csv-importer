@@ -9,6 +9,7 @@ data into rich graph visualizations quickly.
 
 ### Prerequisites
 - Linkurious Enterprise 2.9.x or above
+- A connected Neo4j data-source in Linkurious 
 - CSV files containing nodes or edges structured as follows:
 
 #### For nodes
@@ -44,7 +45,7 @@ Two sample CSV files, for nodes and edges, are available [here](https://github.c
 
 ## Access the plugin
 
-To access the plugin it's recommended to create a custom action that will appears in right-click context menu within the Linkurious 
+To access the plugin it's recommended to create a custom action that will appear in right-click context menu within the Linkurious 
 Enterprise UI.
 
 ![](readme_assets/customaction.png)
@@ -65,39 +66,49 @@ In order to do so:
 
 1. Choose your CSV file and click the Upload button
 2. Specify if you are uploading nodes or edges
+
+![](readme_assets/choosetype.png)
+
 3. Confirm the category name/edge type and the list of properties
-7. For edges, specify the categories for the source and destination nodes
-8. Click import
+
+![](readme_assets/checkcategory.png)
+![](readme_assets/checkproperty.png)
+
+4. For edges, specify the categories for the source and destination nodes
+5. Click import
+6. Check if data has been imported successfully
+
+![](readme_assets/success.png)
 
 ### Import status
 
 After the import, you will get one of the following results:
 
-1. Successful: All nodes / edges have been imported
+1. **Successful**: All nodes / edges have been imported
 
-2. Failed: Nothing has been imported
+2. **Failed**: Nothing has been imported
 
-3. Incomplete: Some nodes/edges failed to be imported due to one of the following reasons:
+3. **Incomplete**: Some nodes/edges failed to be imported due to one of the following reasons:
 
-   a. Schema non-compliant data
+   **a. Schema non-compliant data**
       The schema type has phone as number, but in the csv the value of phone is a string. Same for date or booleans or other incompatible types
 
-   b. Unexpected properties (in strict schema)
+   **b. Unexpected properties (in strict schema)**
       If the schema type has name and phone, but in your csv you have the headers name, phone, email, then it will fail for email
 
-   c. Missing required properties
+   **c. Missing required properties**
       If the schema type has phone as required, but your csv has only name
 
-   d. Too many or missing header values
+   **d. Too many or missing header values**
       Your header has 3 property names, but some rows have less than 3 or more than 3 comma-separated values
 
-   e. Source or target node does not exist
+   **e. Source or target node does not exist**
 
-   f. Data-source is not available (including read-only)
+   **f. Data-source is not available (including read-only)**
 
-   g. Unauthorized access to the data-source
+   **g. Unauthorized access to the data-source**
 
-   h. Error unknown
+   **h. Error unknown**
       Default message if error is not known
 
 ## Limitations
@@ -105,4 +116,4 @@ After the import, you will get one of the following results:
 The maximum file size currently supported is 3.5MB.
 
 ## Licensing
-The Linkurious CSV importer plugin is licensed under the Apache License, Version 2.0. See LICENSE for the full license text.
+The Linkurious CSV importer plugin is licensed under the Apache License, Version 2.0. See [LICENSE](/LICENSE) for the full license text.
