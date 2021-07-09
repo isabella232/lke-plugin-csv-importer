@@ -1,53 +1,8 @@
 import {Request, Response} from 'express';
 import {LkError, LkErrorKey, Response as LkResponse} from '@linkurious/rest-client';
 
-export class Logger {
-  private readonly filename: string;
-  constructor(filename: string) {
-    this.filename = filename;
-    this.info = this.info.bind(this);
-  }
-
-  info(message: unknown): void {
-    console.log(`${new Date().toISOString()} ${this.filename} ${JSON.stringify(message)}`);
-  }
-}
-
-const {info} = new Logger(__filename);
-
-/**
- * Same as input.split(/\r?\n/).map(row => row.split(',') but lazy
- * It does not take care of escaping commas, line-breaks, etc...
- */
-export function* parseCSV(input: string): Generator<string[]> {
-  let value = '';
-  let lineValues = [];
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-    if (char === '\r' && input[i + 1] === '\n') {
-      lineValues.push(value);
-      value = '';
-      yield lineValues;
-      lineValues = [];
-      i++;
-      continue;
-    }
-    if (char === '\n') {
-      lineValues.push(value);
-      value = '';
-      yield lineValues;
-      lineValues = [];
-      continue;
-    }
-    if (char === ',') {
-      lineValues.push(value);
-      value = '';
-      continue;
-    }
-    value += char;
-  }
-  lineValues.push(value);
-  yield lineValues;
+export function log(message: unknown): void {
+  console.log(`${new Date().toISOString()} ${JSON.stringify(message, null, 2)}`);
 }
 
 export enum RowErrorMessage {
@@ -113,15 +68,18 @@ export class GroupedErrors extends Map<string, number[]> {
   }
 }
 
-export function respond(asyncHandler: (req: Request) => Promise<{[k: string]: unknown}>) {
+export function respond(asyncHandler: (req: Request) => Promise<{[k: string]: unknown} | void>) {
   return async (req: Request, res: Response): Promise<void> => {
     try {
       const body = await asyncHandler(req);
-      info(body);
-      res.status(200);
-      res.json(body);
+      if (body === undefined) {
+        res.status(204);
+      } else {
+        res.status(200);
+        res.json(body);
+      }
     } catch (e) {
-      info(e);
+      log(e);
       // We don't really care about the status code
       res.status(400);
       res.json({
