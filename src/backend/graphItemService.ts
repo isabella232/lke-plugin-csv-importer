@@ -1,10 +1,10 @@
 import {RestClient, RunQueryResponse} from '@linkurious/rest-client';
-import {GroupedErrors, log} from './utils';
+import {GroupedErrors, log, RowErrorMessage} from './utils';
 import {ImportEdgesParams, ImportItemsResponse, ImportNodesParams} from '../@types/shared';
 
 export class GraphItemService {
   // Cache from category + UID to graph ID
-  static nodeIDS: Map<string, string>;
+  static nodeIDS = new Map<string, number>();
   public importResult: ImportItemsResponse | undefined;
 
   /**
@@ -74,13 +74,18 @@ export class GraphItemService {
       .trim()
       .split(' ')
       .forEach((graphID, i) => {
-        GraphItemService.nodeIDS.set(category + batchUIDs[i], graphID);
+        GraphItemService.nodeIDS.set(category + batchUIDs[i], +graphID);
       });
   }
 
-  static async runCypherQuery(rc: RestClient, cypherQuery: string): Promise<RunQueryResponse> {
+  static async runCypherQuery(
+    rc: RestClient,
+    cypherQuery: string,
+    sourceKey: string
+  ): Promise<RunQueryResponse> {
     const queryResponse = await rc.graphQuery.runQuery({
-      query: cypherQuery
+      query: cypherQuery,
+      sourceKey: sourceKey
     });
     if (!queryResponse.isSuccess()) {
       throw new Error(JSON.stringify(queryResponse, null, 2));
@@ -92,42 +97,47 @@ export class GraphItemService {
     this.importResult = {
       status: 'importing',
       progress: Math.floor(processed / (total + 1)),
-      success: processed - errors.total,
+      success: total - errors.total,
       failed: errors.total,
       error: errors.toObject()
     };
   }
 
-  public endProgress(processed: number, errors: GroupedErrors): void {
+  public endProgress(total: number, errors: GroupedErrors): void {
     if (errors.total === 0) {
       this.importResult = {
         status: 'done',
-        success: processed
+        success: total
       };
     } else {
       this.importResult = {
         status: 'done',
-        success: processed - errors.total,
+        success: total - errors.total,
         failed: errors.total,
         error: errors.toObject()
       };
     }
   }
 
-  public async importItems(rc: RestClient, params: ImportNodesParams | ImportEdgesParams): Promise<void> {
+  public async importItems(
+    rc: RestClient,
+    params: ImportNodesParams | ImportEdgesParams
+  ): Promise<void> {
     const isEdge = 'sourceType' in params;
     let total: number, headers: string[], batchedRows: {rows: unknown[][]; UIDs: string[]}[];
+    let badRows: [string, number[]][] = [];
 
     // 1. Batch items
-    // TODO return errors that can be detected before importing
     if (isEdge) {
-      ({total, headers, batchedRows} = GraphItemService.batchEdges(params.csv));
+      ({total, headers, batchedRows, badRows} = GraphItemService.batchEdges(
+        params as ImportEdgesParams
+      ));
     } else {
       ({total, headers, batchedRows} = GraphItemService.batchNodes(params.csv));
     }
 
     // 2. Keep track of the errors
-    const errors = new GroupedErrors();
+    const errors = new GroupedErrors(badRows);
 
     // 3. Process batch by batch
     let i = 0;
@@ -137,11 +147,11 @@ export class GraphItemService {
         if (isEdge) {
           // 3.a. Build and run a query to create edges
           const query = GraphItemService.buildEdgesQuery(params.itemType, headers, batch.rows);
-          await GraphItemService.runCypherQuery(rc, query);
+          await GraphItemService.runCypherQuery(rc, query, params.sourceKey);
         } else {
           // 3.a. Build and run a query to create nodes
           const query = GraphItemService.buildNodesQuery(params.itemType, headers, batch.rows);
-          const response = await GraphItemService.runCypherQuery(rc, query);
+          const response = await GraphItemService.runCypherQuery(rc, query, params.sourceKey);
           GraphItemService.cacheGraphNodeIDs(params.itemType, response, batch.UIDs);
         }
       } catch (e) {
@@ -151,7 +161,7 @@ export class GraphItemService {
       this.updateProgress(i, total, errors);
     }
 
-    this.endProgress(i, errors);
+    this.endProgress(total, errors);
   }
 
   /**
@@ -202,49 +212,65 @@ export class GraphItemService {
   /**
    * TODO take care of escaping commas, line-breaks, etc...
    * EOL is \n on POSIX and \r\n on Windows
+   *
+   * Returns edges split in batches and edges that have no extremities cached
    */
-  public static batchEdges(csv: string): {
+  public static batchEdges(params: ImportEdgesParams): {
     total: number;
     headers: string[];
     batchedRows: {rows: unknown[][]; UIDs: string[]}[];
+    badRows: [string, number[]][];
   } {
     const MAX_BATCH_SIZE = 500;
     let total = 0;
     let headers: unknown[] | undefined = undefined;
     let batchedRows: {rows: unknown[][]; UIDs: string[]}[] = [{rows: [], UIDs: []}];
-    csv.split(/\r?\n/).forEach((row) => {
-      const values = row.split(',').map((value) => {
+    const noExtremitiesRows: number[] = [];
+
+    // Parse row by row
+    for (const row of params.csv.split(/\r?\n/)) {
+      const values: (string | number | null)[] = row.split(',').map((value) => {
         if (value === '') {
-          return null; // Cypher ignores null properties when creating
+          return null; // Cypher ignores `null` properties when creating
         }
         return value;
       });
+
+      // First row is for headers
       if (headers === undefined) {
         headers = values.slice(2);
-      } else {
-        total++;
-        let [from, to, ...properties] = values;
-        // TODO exclude from batch if its extremities are not found
-        properties = [
-          GraphItemService.nodeIDS.get(from + '')!,
-          GraphItemService.nodeIDS.get(to + '')!,
-          ...properties
-        ];
-        if (batchedRows[0].rows.length === 0) {
-          batchedRows[0].rows.push(properties);
-          batchedRows.push({rows: [], UIDs: []});
-        } else if (batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE) {
-          batchedRows.push({rows: [properties], UIDs: []});
-        } else {
-          batchedRows[batchedRows.length - 1].rows.push(properties);
-        }
+        continue;
       }
-    });
+
+      // Rest of the rows are for edges
+      total++;
+      let [from, to, ...properties] = values;
+      const sourceID = GraphItemService.nodeIDS.get(params.sourceType + from);
+      const targetID = GraphItemService.nodeIDS.get(params.destinationType + to);
+
+      // Exclude edge from the batches if its extremities are not found
+      if (sourceID === undefined || targetID === undefined) {
+        noExtremitiesRows.push(total);
+        continue;
+      }
+
+      // Assign edge to a batch
+      properties = [sourceID, targetID, ...properties];
+      if (batchedRows[0].rows.length === 0) {
+        batchedRows[0].rows.push(properties);
+        batchedRows.push({rows: [], UIDs: []});
+      } else if (batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE) {
+        batchedRows.push({rows: [properties], UIDs: []});
+      } else {
+        batchedRows[batchedRows.length - 1].rows.push(properties);
+      }
+    }
     GraphItemService.checkNonEmptyHeaders(headers);
     return {
       total: total,
       headers: headers,
-      batchedRows: batchedRows
+      batchedRows: batchedRows,
+      badRows: [[RowErrorMessage.SOURCE_TARGET_NOT_FOUND, noExtremitiesRows]]
     };
   }
 

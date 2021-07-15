@@ -18,6 +18,12 @@ export enum RowErrorMessage {
 
 export class GroupedErrors extends Map<string, number[]> {
   public static validKeys = new Set(Object.values(RowErrorMessage));
+
+  constructor(entries?: [string, number[]][]) {
+    super();
+    entries?.forEach(([error, rows]) => rows.forEach((row) => this.add(error, row)));
+  }
+
   public total = 0;
   public add(error: string | LkResponse<LkError>, row: number) {
     const errorKey = GroupedErrors.simplifyErrorMessage(error);
@@ -74,6 +80,7 @@ export function respond(asyncHandler: (req: Request) => Promise<{[k: string]: un
       const body = await asyncHandler(req);
       if (body === undefined) {
         res.status(204);
+        res.send();
       } else {
         res.status(200);
         res.json(body);
