@@ -1,72 +1,86 @@
 import {Request, Response} from 'express';
-import {LkError, LkErrorKey, Response as LkResponse} from '@linkurious/rest-client';
+import {LkErrorKey} from '@linkurious/rest-client';
 
-export function log(message: unknown): void {
-  console.log(`${new Date().toISOString()} ${JSON.stringify(message, null, 2)}`);
+export function log(...messages: unknown[]): void {
+  console.log(
+    `${new Date().toISOString()} ${messages
+      .map((message) => JSON.stringify(message, null, 2))
+      .join(' ')}`
+  );
 }
 
 export enum RowErrorMessage {
-  TOO_MANY_VALUES = 'Got more values than headers',
+  TOO_MANY_OR_MISSING_PROPERTIES = 'There are not as many properties as headers',
   SOURCE_TARGET_NOT_FOUND = 'Source or target node not found',
-  SCHEMA_NON_COMPLAINT = 'Values types are not complaint with the schema',
-  MISSING_REQUIRED_PROPERTIES = 'Missing properties required by the schema',
-  UNEXPECTED_SCHEMA_PROPERTIES = 'Got properties not expected by the schema',
   DATA_SOURCE_UNAVAILABLE = 'Data-source is not available',
   UNAUTHORIZED = 'You are not logged in',
   UNEXPECTED = 'Unexpected error, check the logs'
 }
 
-export class GroupedErrors extends Map<string, number[]> {
+export class GroupedErrors extends Map<RowErrorMessage, number[]> {
   public static validKeys = new Set(Object.values(RowErrorMessage));
 
-  constructor(entries?: [string, number[]][]) {
+  constructor(entries?: [RowErrorMessage, number[]][]) {
     super();
     entries?.forEach(([error, rows]) => rows.forEach((row) => this.add(error, row)));
   }
 
   public total = 0;
-  public add(error: string | LkResponse<LkError>, row: number) {
+  public add(error: unknown, rowNumbers: number | number[]) {
     const errorKey = GroupedErrors.simplifyErrorMessage(error);
-    const entry = this.get(errorKey);
+    let entry = this.get(errorKey);
     if (entry === undefined) {
-      this.set(errorKey, [row]);
-    } else {
-      entry.push(row);
+      entry = [];
+      this.set(errorKey, entry);
     }
-    this.total++;
+    if (typeof rowNumbers === 'number') {
+      rowNumbers = [rowNumbers];
+    }
+    for (let i = 0; i < rowNumbers.length; i++) {
+      entry.push(rowNumbers[i]);
+      this.total++;
+    }
   }
+
   public toObject() {
-    const obj: Record<string, number[]> = {};
+    const obj: Record<string, string[]> = {};
     for (const [a, b] of this) {
-      obj[a] = b;
+      b.sort((a, b) => a - b);
+      const readableRows: string[] = [];
+      let last: number | [number, number] | null = null;
+      for (const row of b) {
+        // Convert row to row range
+        if (typeof last === 'number' && last === row - 1) {
+          last = [last, row];
+          readableRows[readableRows.length - 1] = `${last[0]}~${last[1]}`;
+          continue;
+        }
+        // Expand range
+        if (Array.isArray(last) && last[1] === row - 1) {
+          last[1] = row;
+          readableRows[readableRows.length - 1] = `${last[0]}~${last[1]}`;
+          continue;
+        }
+        // Add single row
+        readableRows.push(row + '');
+        last = row;
+      }
+      obj[a] = readableRows;
     }
     return obj;
   }
 
-  private static simplifyErrorMessage(error: string | LkResponse<LkError>): RowErrorMessage {
-    if (!(error instanceof LkResponse) && GroupedErrors.validKeys.has(error as RowErrorMessage)) {
+  private static simplifyErrorMessage(error: unknown): RowErrorMessage {
+    if (GroupedErrors.validKeys.has(error as RowErrorMessage)) {
       return error as RowErrorMessage;
     }
 
-    const message = error instanceof LkResponse ? error.body.message : error;
-    if (message.includes('source') && message.includes('target')) {
-      return RowErrorMessage.SOURCE_TARGET_NOT_FOUND;
-    }
-    if (message.includes('" must be')) {
-      return RowErrorMessage.SCHEMA_NON_COMPLAINT;
-    }
-    if (message.includes('" must not be undefined')) {
-      return RowErrorMessage.MISSING_REQUIRED_PROPERTIES;
-    }
-    if (message.includes('" has unexpected properties')) {
-      return RowErrorMessage.UNEXPECTED_SCHEMA_PROPERTIES;
-    }
-
-    const key = error instanceof LkResponse ? error.body.key : undefined;
-    if (key === LkErrorKey.DATA_SOURCE_UNAVAILABLE) {
+    // @ts-ignore
+    if (error.body?.key === LkErrorKey.DATA_SOURCE_UNAVAILABLE) {
       return RowErrorMessage.DATA_SOURCE_UNAVAILABLE;
     }
-    if (key === LkErrorKey.UNAUTHORIZED) {
+    // @ts-ignore
+    if (error.body?.key === LkErrorKey.UNAUTHORIZED) {
       return RowErrorMessage.UNAUTHORIZED;
     }
 

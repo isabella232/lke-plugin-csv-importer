@@ -88,7 +88,7 @@ export class GraphItemService {
       sourceKey: sourceKey
     });
     if (!queryResponse.isSuccess()) {
-      throw new Error(JSON.stringify(queryResponse, null, 2));
+      throw queryResponse;
     }
     return queryResponse.body;
   }
@@ -124,8 +124,10 @@ export class GraphItemService {
     params: ImportNodesParams | ImportEdgesParams
   ): Promise<void> {
     const isEdge = 'sourceType' in params;
-    let total: number, headers: string[], batchedRows: {rows: unknown[][]; UIDs: string[]}[];
-    let badRows: [string, number[]][] = [];
+    let total: number;
+    let headers: string[];
+    let batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[];
+    let badRows: [RowErrorMessage, number[]][];
 
     // 1. Batch items
     if (isEdge) {
@@ -133,7 +135,7 @@ export class GraphItemService {
         params as ImportEdgesParams
       ));
     } else {
-      ({total, headers, batchedRows} = GraphItemService.batchNodes(params.csv));
+      ({total, headers, batchedRows, badRows} = GraphItemService.batchNodes(params.csv));
     }
 
     // 2. Keep track of the errors
@@ -155,8 +157,8 @@ export class GraphItemService {
           GraphItemService.cacheGraphNodeIDs(params.itemType, response, batch.UIDs);
         }
       } catch (e) {
-        log({unhandledError: e});
-        errors.add(e.message, i);
+        log('Batch has failed', e.body?.message);
+        errors.add(e, batch.indices);
       }
       this.updateProgress(i, total, errors);
     }
@@ -171,13 +173,15 @@ export class GraphItemService {
   public static batchNodes(csv: string): {
     total: number;
     headers: string[];
-    batchedRows: {rows: unknown[][]; UIDs: string[]}[];
+    batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[];
+    badRows: [RowErrorMessage, number[]][];
   } {
-    const MAX_BATCH_SIZE = 500;
-    let total = 0;
+    const MAX_BATCH_SIZE = 10;
+    let count = 0;
     let headers: unknown[] | undefined = undefined;
-    let batchedRows: {UIDs: string[]; rows: unknown[][]}[] = [{UIDs: [], rows: []}];
-    csv.split(/\r?\n/).forEach((row) => {
+    let batchedRows: {indices: number[]; UIDs: string[]; rows: unknown[][]}[] = [];
+    const tooManyOrMissingProperties: number[] = [];
+    for (const row of csv.split(/\r?\n/)) {
       const values = row.split(',').map((value) => {
         if (value === '') {
           return null; // Cypher ignores null properties when creating
@@ -187,25 +191,33 @@ export class GraphItemService {
       if (headers === undefined) {
         headers = values.slice(1);
       } else {
-        total++;
+        count++;
         const [UID, ...properties] = values;
-        if (batchedRows[0].rows.length === 0) {
-          batchedRows[0].rows.push(properties);
-          batchedRows[0].UIDs.push(UID + '');
-          batchedRows.push({rows: [], UIDs: []});
-        } else if (batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE) {
-          batchedRows.push({rows: [properties], UIDs: [UID + '']});
+        if (properties.length !== headers.length) {
+          tooManyOrMissingProperties.push(count);
+          continue;
+        }
+
+        // Assign node to a batch
+        if (
+          batchedRows.length === 0 ||
+          batchedRows.length === 1 ||
+          batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE
+        ) {
+          batchedRows.push({indices: [count], rows: [properties], UIDs: [UID + '']});
         } else {
+          batchedRows[batchedRows.length - 1].indices.push(count);
           batchedRows[batchedRows.length - 1].rows.push(properties);
           batchedRows[batchedRows.length - 1].UIDs.push(UID + '');
         }
       }
-    });
+    }
     GraphItemService.checkNonEmptyHeaders(headers);
     return {
-      total: total,
+      total: count,
       headers: headers,
-      batchedRows: batchedRows
+      batchedRows: batchedRows,
+      badRows: [[RowErrorMessage.TOO_MANY_OR_MISSING_PROPERTIES, tooManyOrMissingProperties]]
     };
   }
 
@@ -218,14 +230,15 @@ export class GraphItemService {
   public static batchEdges(params: ImportEdgesParams): {
     total: number;
     headers: string[];
-    batchedRows: {rows: unknown[][]; UIDs: string[]}[];
-    badRows: [string, number[]][];
+    batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[];
+    badRows: [RowErrorMessage, number[]][];
   } {
-    const MAX_BATCH_SIZE = 500;
-    let total = 0;
+    const MAX_BATCH_SIZE = 10;
+    let count = 0;
     let headers: unknown[] | undefined = undefined;
-    let batchedRows: {rows: unknown[][]; UIDs: string[]}[] = [{rows: [], UIDs: []}];
+    let batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[] = [];
     const noExtremitiesRows: number[] = [];
+    const tooManyOrMissingProperties: number[] = [];
 
     // Parse row by row
     for (const row of params.csv.split(/\r?\n/)) {
@@ -243,34 +256,44 @@ export class GraphItemService {
       }
 
       // Rest of the rows are for edges
-      total++;
+      count++;
       let [from, to, ...properties] = values;
+      if (properties.length !== headers.length) {
+        tooManyOrMissingProperties.push(count);
+        continue;
+      }
+
       const sourceID = GraphItemService.nodeIDS.get(params.sourceType + from);
       const targetID = GraphItemService.nodeIDS.get(params.destinationType + to);
 
       // Exclude edge from the batches if its extremities are not found
       if (sourceID === undefined || targetID === undefined) {
-        noExtremitiesRows.push(total);
+        noExtremitiesRows.push(count);
         continue;
       }
 
       // Assign edge to a batch
       properties = [sourceID, targetID, ...properties];
-      if (batchedRows[0].rows.length === 0) {
-        batchedRows[0].rows.push(properties);
-        batchedRows.push({rows: [], UIDs: []});
-      } else if (batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE) {
-        batchedRows.push({rows: [properties], UIDs: []});
+      if (
+        batchedRows.length === 0 ||
+        batchedRows.length === 1 ||
+        batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE
+      ) {
+        batchedRows.push({indices: [count], rows: [properties], UIDs: []});
       } else {
+        batchedRows[batchedRows.length - 1].indices.push(count);
         batchedRows[batchedRows.length - 1].rows.push(properties);
       }
     }
     GraphItemService.checkNonEmptyHeaders(headers);
     return {
-      total: total,
+      total: count,
       headers: headers,
       batchedRows: batchedRows,
-      badRows: [[RowErrorMessage.SOURCE_TARGET_NOT_FOUND, noExtremitiesRows]]
+      badRows: [
+        [RowErrorMessage.SOURCE_TARGET_NOT_FOUND, noExtremitiesRows],
+        [RowErrorMessage.TOO_MANY_OR_MISSING_PROPERTIES, tooManyOrMissingProperties]
+      ]
     };
   }
 
