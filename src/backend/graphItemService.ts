@@ -74,7 +74,7 @@ export class GraphItemService {
       .trim()
       .split(' ')
       .forEach((graphID, i) => {
-        GraphItemService.nodeIDS.set(category + batchUIDs[i], +graphID);
+        GraphItemService.nodeIDS.set(category + batchUIDs[i], Number.parseInt(graphID));
       });
   }
 
@@ -131,11 +131,11 @@ export class GraphItemService {
 
     // 1. Batch items
     if (isEdge) {
-      ({total, headers, batchedRows, badRows} = GraphItemService.batchEdges(
+      ({total, headers, batchedRows, badRows} = GraphItemService.createEdgeBatches(
         params as ImportEdgesParams
       ));
     } else {
-      ({total, headers, batchedRows, badRows} = GraphItemService.batchNodes(params.csv));
+      ({total, headers, batchedRows, badRows} = GraphItemService.createNodeBatches(params.csv));
     }
 
     // 2. Keep track of the errors
@@ -167,10 +167,32 @@ export class GraphItemService {
   }
 
   /**
+   * Parse a CSV string value intro a string, number or boolean
+   */
+  public static parseValue(value: string): string | number | boolean | null {
+    // Properties without value
+    if (value === '') {
+      return null; // Cypher ignores null properties when creating
+    }
+    // Numerical properties
+    if (/^(0|([1-9]\d*))(\.\d+)?$/.test(value)) {
+      return Number.parseFloat(value);
+    }
+    // Boolean properties
+    if (value === 'true') {
+      return true;
+    }
+    if (value === 'false') {
+      return false;
+    }
+    return value;
+  }
+
+  /**
    * TODO take care of escaping commas, line-breaks, etc...
    * EOL is \n on POSIX and \r\n on Windows
    */
-  public static batchNodes(csv: string): {
+  public static createNodeBatches(csv: string): {
     total: number;
     headers: string[];
     batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[];
@@ -182,13 +204,10 @@ export class GraphItemService {
     let batchedRows: {indices: number[]; UIDs: string[]; rows: unknown[][]}[] = [];
     const tooManyOrMissingProperties: number[] = [];
     for (const row of csv.split(/\r?\n/)) {
-      const values = row.split(',').map((value) => {
-        if (value === '') {
-          return null; // Cypher ignores null properties when creating
-        }
-        return value;
-      });
+      const values = row.split(',').map(GraphItemService.parseValue);
+
       if (headers === undefined) {
+        // We skip the first column (uid)
         headers = values.slice(1);
       } else {
         count++;
@@ -200,8 +219,11 @@ export class GraphItemService {
 
         // Assign node to a batch
         if (
+          // Initialize the batch
           batchedRows.length === 0 ||
+          // First batch is of one element to build and cache the query execution plan in neo4j
           batchedRows.length === 1 ||
+          // Create a new batch if last batch has reached `MAX_BATCH_SIZE` elements
           batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE
         ) {
           batchedRows.push({indices: [count], rows: [properties], UIDs: [UID + '']});
@@ -227,7 +249,7 @@ export class GraphItemService {
    *
    * Returns edges split in batches and edges that have no extremities cached
    */
-  public static batchEdges(params: ImportEdgesParams): {
+  public static createEdgeBatches(params: ImportEdgesParams): {
     total: number;
     headers: string[];
     batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[];
@@ -242,15 +264,11 @@ export class GraphItemService {
 
     // Parse row by row
     for (const row of params.csv.split(/\r?\n/)) {
-      const values: (string | number | null)[] = row.split(',').map((value) => {
-        if (value === '') {
-          return null; // Cypher ignores `null` properties when creating
-        }
-        return value;
-      });
+      const values = row.split(',').map(GraphItemService.parseValue);
 
       // First row is for headers
       if (headers === undefined) {
+        // We skip the first column (source node uid) and the second column (target node uid)
         headers = values.slice(2);
         continue;
       }
@@ -275,8 +293,11 @@ export class GraphItemService {
       // Assign edge to a batch
       properties = [sourceID, targetID, ...properties];
       if (
+        // Initialize the batch
         batchedRows.length === 0 ||
+        // First batch is of one element to build and cache the query execution plan in neo4j
         batchedRows.length === 1 ||
+        // Create a new batch if last batch has reached `MAX_BATCH_SIZE` elements
         batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE
       ) {
         batchedRows.push({indices: [count], rows: [properties], UIDs: []});

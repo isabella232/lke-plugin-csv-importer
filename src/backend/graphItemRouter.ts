@@ -18,7 +18,9 @@ export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): vo
       const rc = options.getRestClient(req);
       const params = GraphItemParams.checkImportNodes(req);
 
-      graphItemService.importItems(rc, params).then(_ => {});
+      // We don't wait for the import to finish, we don't return this promise on purpose
+      graphItemService.importItems(rc, params).catch(console.log);
+
       return;
     })
   );
@@ -32,7 +34,9 @@ export = function configureRoutes(options: PluginRouteOptions<PluginConfig>): vo
       const rc = options.getRestClient(req);
       const params = GraphItemParams.checkImportEdges(req);
 
-      graphItemService.importItems(rc, params).then(_ => {});
+      // We don't wait for the import to finish, we don't return this promise on purpose
+      graphItemService.importItems(rc, params).catch(console.log);
+
       return;
     })
   );
