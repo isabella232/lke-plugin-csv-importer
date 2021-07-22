@@ -1,111 +1,87 @@
-import {Request, Response} from 'express';
-import {LkError, LkErrorKey, Response as LkResponse} from '@linkurious/rest-client';
+import {Request, Response as _Response} from 'express';
+import {LkErrorKey, Response} from '@linkurious/rest-client';
 
-export class Logger {
-  private readonly filename: string;
-  constructor(filename: string) {
-    this.filename = filename;
-    this.info = this.info.bind(this);
-  }
-
-  info(message: unknown): void {
-    console.log(`${new Date().toISOString()} ${this.filename} ${JSON.stringify(message)}`);
-  }
-}
-
-const {info} = new Logger(__filename);
-
-/**
- * Same as input.split(/\r?\n/).map(row => row.split(',') but lazy
- * It does not take care of escaping commas, line-breaks, etc...
- */
-export function* parseCSV(input: string): Generator<string[]> {
-  let value = '';
-  let lineValues = [];
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-    if (char === '\r' && input[i + 1] === '\n') {
-      lineValues.push(value);
-      value = '';
-      yield lineValues;
-      lineValues = [];
-      i++;
-      continue;
-    }
-    if (char === '\n') {
-      lineValues.push(value);
-      value = '';
-      yield lineValues;
-      lineValues = [];
-      continue;
-    }
-    if (char === ',') {
-      lineValues.push(value);
-      value = '';
-      continue;
-    }
-    value += char;
-  }
-  lineValues.push(value);
-  yield lineValues;
+export function log(...messages: unknown[]): void {
+  console.log(
+    new Date().toISOString(),
+    ...messages.map((message) =>
+      message instanceof Error || message instanceof Response ? message : JSON.stringify(message)
+    )
+  );
 }
 
 export enum RowErrorMessage {
-  TOO_MANY_VALUES = 'Got more values than headers',
+  TOO_MANY_OR_MISSING_PROPERTIES = 'There are not as many properties as headers',
   SOURCE_TARGET_NOT_FOUND = 'Source or target node not found',
-  SCHEMA_NON_COMPLAINT = 'Values types are not complaint with the schema',
-  MISSING_REQUIRED_PROPERTIES = 'Missing properties required by the schema',
-  UNEXPECTED_SCHEMA_PROPERTIES = 'Got properties not expected by the schema',
   DATA_SOURCE_UNAVAILABLE = 'Data-source is not available',
   UNAUTHORIZED = 'You are not logged in',
   UNEXPECTED = 'Unexpected error, check the logs'
 }
 
-export class GroupedErrors extends Map<string, number[]> {
+export class GroupedErrors extends Map<RowErrorMessage, number[]> {
   public static validKeys = new Set(Object.values(RowErrorMessage));
-  public total = 0;
-  public add(error: string | LkResponse<LkError>, row: number) {
-    const errorKey = GroupedErrors.simplifyErrorMessage(error);
-    const entry = this.get(errorKey);
-    if (entry === undefined) {
-      this.set(errorKey, [row]);
-    } else {
-      entry.push(row);
-    }
-    this.total++;
+
+  constructor(entries?: [RowErrorMessage, number[]][]) {
+    super();
+    entries?.forEach(([error, rows]) => rows.forEach((row) => this.add(error, row)));
   }
+
+  public total = 0;
+  public add(error: unknown, rowNumbers: number | number[]) {
+    const errorKey = GroupedErrors.simplifyErrorMessage(error);
+    let entry = this.get(errorKey);
+    if (entry === undefined) {
+      entry = [];
+      this.set(errorKey, entry);
+    }
+    if (typeof rowNumbers === 'number') {
+      rowNumbers = [rowNumbers];
+    }
+    for (let i = 0; i < rowNumbers.length; i++) {
+      entry.push(rowNumbers[i]);
+      this.total++;
+    }
+  }
+
   public toObject() {
-    const obj: Record<string, number[]> = {};
+    const obj: Record<string, string[]> = {};
     for (const [a, b] of this) {
-      obj[a] = b;
+      b.sort((a, b) => a - b);
+      const readableRows: string[] = [];
+      let last: number | [number, number] | null = null;
+      for (const row of b) {
+        // Convert row to row range
+        if (typeof last === 'number' && last === row - 1) {
+          last = [last, row];
+          readableRows[readableRows.length - 1] = `${last[0]}~${last[1]}`;
+          continue;
+        }
+        // Expand range
+        if (Array.isArray(last) && last[1] === row - 1) {
+          last[1] = row;
+          readableRows[readableRows.length - 1] = `${last[0]}~${last[1]}`;
+          continue;
+        }
+        // Add single row
+        readableRows.push(row + '');
+        last = row;
+      }
+      obj[a] = readableRows;
     }
     return obj;
   }
 
-  private static simplifyErrorMessage(error: string | LkResponse<LkError>): RowErrorMessage {
-    if (!(error instanceof LkResponse) && GroupedErrors.validKeys.has(error as RowErrorMessage)) {
+  private static simplifyErrorMessage(error: unknown): RowErrorMessage {
+    if (GroupedErrors.validKeys.has(error as RowErrorMessage)) {
       return error as RowErrorMessage;
     }
 
-    const message = error instanceof LkResponse ? error.body.message : error;
-    if (message.includes('source') && message.includes('target')) {
-      return RowErrorMessage.SOURCE_TARGET_NOT_FOUND;
-    }
-    if (message.includes('" must be')) {
-      return RowErrorMessage.SCHEMA_NON_COMPLAINT;
-    }
-    if (message.includes('" must not be undefined')) {
-      return RowErrorMessage.MISSING_REQUIRED_PROPERTIES;
-    }
-    if (message.includes('" has unexpected properties')) {
-      return RowErrorMessage.UNEXPECTED_SCHEMA_PROPERTIES;
-    }
-
-    const key = error instanceof LkResponse ? error.body.key : undefined;
-    if (key === LkErrorKey.DATA_SOURCE_UNAVAILABLE) {
+    // @ts-ignore
+    if (error.body?.key === LkErrorKey.DATA_SOURCE_UNAVAILABLE) {
       return RowErrorMessage.DATA_SOURCE_UNAVAILABLE;
     }
-    if (key === LkErrorKey.UNAUTHORIZED) {
+    // @ts-ignore
+    if (error.body?.key === LkErrorKey.UNAUTHORIZED) {
       return RowErrorMessage.UNAUTHORIZED;
     }
 
@@ -113,15 +89,19 @@ export class GroupedErrors extends Map<string, number[]> {
   }
 }
 
-export function respond(asyncHandler: (req: Request) => Promise<{[k: string]: unknown}>) {
-  return async (req: Request, res: Response): Promise<void> => {
+export function respond(asyncHandler: (req: Request) => Promise<{[k: string]: unknown} | void>) {
+  return async (req: Request, res: _Response): Promise<void> => {
     try {
       const body = await asyncHandler(req);
-      info(body);
-      res.status(200);
-      res.json(body);
+      if (body === undefined) {
+        res.status(204);
+        res.send();
+      } else {
+        res.status(200);
+        res.json(body);
+      }
     } catch (e) {
-      info(e);
+      log(e);
       // We don't really care about the status code
       res.status(400);
       res.json({

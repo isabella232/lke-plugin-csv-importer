@@ -31,7 +31,7 @@ export class CSVImportFeedback {
     let errors = '';
     Object.entries(feedback.error || {}).forEach(([key, value], index) => {
       const jumpLine = Object.entries(feedback.error || {}).length === index + 1 ? '.' : ' \n\n';
-      errors += key + '\n' + `${value.length === 1 ? 'Row' : 'Rows'}: ${value.join(', ')}${jumpLine}`;
+      errors += key + '\n' + `${value.length === 1 && !value[0].includes('~') ? 'Row' : 'Rows'}: ${value.join(', ')}${jumpLine}`;
     });
     switch (total) {
       case feedback.success:
