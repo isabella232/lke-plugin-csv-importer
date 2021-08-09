@@ -236,7 +236,8 @@ export class GraphItemService {
     }
     GraphItemService.checkNonEmptyHeaders(headers);
     return {
-      total: count,
+      // The header is not an item
+      total: count - 1,
       headers: headers,
       batchedRows: batchedRows,
       badRows: [[RowErrorMessage.TOO_MANY_OR_MISSING_PROPERTIES, tooManyOrMissingProperties]]
@@ -308,7 +309,8 @@ export class GraphItemService {
     }
     GraphItemService.checkNonEmptyHeaders(headers);
     return {
-      total: count,
+      // The header is not an item
+      total: count - 1,
       headers: headers,
       batchedRows: batchedRows,
       badRows: [
