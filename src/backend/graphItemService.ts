@@ -199,7 +199,7 @@ export class GraphItemService {
     badRows: [RowErrorMessage, number[]][];
   } {
     const MAX_BATCH_SIZE = 10;
-    let count = 0;
+    let count = 1;
     let headers: unknown[] | undefined = undefined;
     let batchedRows: {indices: number[]; UIDs: string[]; rows: unknown[][]}[] = [];
     const tooManyOrMissingProperties: number[] = [];
@@ -256,7 +256,7 @@ export class GraphItemService {
     badRows: [RowErrorMessage, number[]][];
   } {
     const MAX_BATCH_SIZE = 10;
-    let count = 0;
+    let count = 1;
     let headers: unknown[] | undefined = undefined;
     let batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[] = [];
     const noExtremitiesRows: number[] = [];
