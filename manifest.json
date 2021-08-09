@@ -1,7 +1,0 @@
-{
-    "name": "importer",
-    "version": "1.0.0",
-    "publicRoute": "public",
-    "backendFiles": ["backend/route.js"],
-    "pluginApiVersion": "1.0.0"
-}
