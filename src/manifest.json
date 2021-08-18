@@ -1,6 +1,6 @@
 {
-  "name": "importer",
-  "version": "0.0.1",
+  "name": "csv-importer",
+  "version": "1.0.1",
   "pluginApiVersion": "1.0.0",
   "publicRoute": "public",
   "singlePageAppIndex": "index.html",
