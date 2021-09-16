@@ -163,6 +163,9 @@ export class GraphItemService {
       this.updateProgress(i, total, errors);
     }
 
+    // LKE-4201 Remove the CSV_PLUGIN category
+    await GraphItemService.runCypherQuery(rc,'MATCH(c:CSV_PLUGIN) DETACH DELETE c RETURN 0', params.sourceKey);
+
     this.endProgress(total, errors);
   }
 
