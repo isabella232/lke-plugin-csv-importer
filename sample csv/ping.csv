@@ -1,4 +1,4 @@
-from_id,to_id,date
+source_id,destination_id,date
 19,33,7/2/2020
 16,37,6/24/2020
 23,35,9/28/2019

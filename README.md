@@ -28,8 +28,8 @@ Two sample CSV files, for nodes and edges, are available [here](https://github.c
 
 > Make sure to have write access to the folder of Linkurious Enterprise as well as a Linkurious admin account.
 
-1. Download the `csv-importer.lke` plugin available [here](https://github.com/Linkurious/lke-plugin-csv-importer/releases/tag/v1.0.0).
-2. Copy `csv-importer.lke` file to the following path `<linkurious>/data/plugins`
+1. Download the `lke-plugin-csv-importer-{version number}.lke` plugin available [here](https://github.com/Linkurious/lke-plugin-csv-importer/releases).
+2. Copy `lke-plugin-csv-importer-{version number}.lke` file to the following path `<linkurious>/data/plugins`
 3. From the Linkurious Enterprise dashboard, go to `Admin` -> `Global configuration`
 4. Scroll to the `Plugin settings` field
 5. On the `Plugin settings` section, modify the content as follows:

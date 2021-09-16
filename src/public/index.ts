@@ -12,7 +12,7 @@ import {EntityType} from "@linkurious/rest-client";
 
 function main() {
 
-  let sourceKey: string | undefined;
+  let sourceKey: string;
   let propertiesName: string | undefined;
   let entityName: string;
   let csv = "";
@@ -161,7 +161,7 @@ function main() {
   ) as HTMLElement;
   const newFileButton = document.getElementById("newFileButton") as HTMLElement;
   goBackLinkurious.addEventListener("click", async () => {
-    utils.goToLinkurious();
+    utils.goToLinkurious(sourceKey);
   });
   newFileButton.addEventListener("click", async () => {
     importFeedback.hideCard();

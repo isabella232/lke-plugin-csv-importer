@@ -37,8 +37,9 @@ function stopWaiting() {
 /**
  * Go back to linkurious home page
  */
-function goToLinkurious() {
-  window.location = (window.location.origin as unknown) as Location;
+function goToLinkurious(sourceKey: string) {
+  const location = window.location.origin + `/dashboard?key=${sourceKey}`;
+  window.location = (location as unknown) as Location;
 }
 
 /**
