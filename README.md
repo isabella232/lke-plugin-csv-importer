@@ -99,17 +99,19 @@ After the import, you will get one of the following results:
    **c. Missing required properties**:
       If the schema type has phone as required, but your csv has only name
 
-   **d. Too many or missing header values**:
+   **d. There are not as many properties as headers**:
       Your header has 3 property names, but some rows have less than 3 or more than 3 comma-separated values
 
-   **e. Source or target node does not exist**
+   **e. Source or target node not found**
 
-   **f. Data-source is not available (including read-only)**
+   **f. Data-source is not available**:
+      Data source is not available or is set to read only.
+
 
    **g. Unauthorized access to the data-source**
 
-   **h. Error unknown**:
-      Default message if error is not known
+   **h. Unexpected error, check the logs**:
+      Default message if error is unknown. You can download the logs following [these steps] (https://doc.linkurio.us/admin-manual/latest/support/)
 
 ## Limitations
 
