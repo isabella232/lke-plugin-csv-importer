@@ -329,7 +329,6 @@ export class GraphItemService {
   private static checkNonEmptyHeaders(headers: unknown): asserts headers is string[] {
     if (
       !Array.isArray(headers) ||
-      headers.length === 0 ||
       headers.some((h) => typeof h !== 'string' || h.length === 0)
     ) {
       log(headers);
