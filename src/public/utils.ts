@@ -38,7 +38,14 @@ function stopWaiting() {
  * Go back to linkurious home page
  */
 function goToLinkurious(sourceKey: string) {
-  const location = window.location.origin + `/dashboard?key=${sourceKey}`;
+  let basePath;
+  const match = window.location.pathname.match(/([^/]+)\/plugins\/.+/);
+  if (match === null) {
+    basePath = '';
+  } else {
+    basePath = '/' + match[1];
+  }
+  const location = window.location.origin + basePath + `/dashboard?key=${sourceKey}`;
   window.location = (location as unknown) as Location;
 }
 
