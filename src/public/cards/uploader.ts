@@ -1,4 +1,5 @@
-import {startWaiting, stopWaiting} from "../utils";
+import { startWaiting, stopWaiting } from "../utils";
+import { CSVUtils } from "../shared";
 
 const FILE_SIZE_LIMIT = 3.5 * Math.pow(10, 6);
 
@@ -70,7 +71,7 @@ export class CSVUploader {
    */
   readFile(): Promise<{
     sourceKey: string,
-    propertiesName: string,
+    headers: string[],
     entityName: string,
     csv: string
   }> {
@@ -92,12 +93,18 @@ export class CSVUploader {
           stopWaiting();
           if (event && event.target && event.target.result) {
             const result = event.target.result as string;
-            // this regex identifies all new line characters (independently of the OS: windows or unix)
-            // then it extracts the first line (csv headers)
-            const headers = result.split(/\r?\n|\r/, 1)[0];
+
+            const parsedCSV = CSVUtils.parseCSV(result);
+            if ('error' in parsedCSV) {
+              this.fileError.innerHTML = parsedCSV.error;
+              this.showError();
+              reject(parsedCSV.error);
+              return;
+            }
+
             resolve({
               sourceKey: sourceKey,
-              propertiesName: headers,
+              headers: parsedCSV.headers,
               entityName: this._entityName,
               csv: result
             });

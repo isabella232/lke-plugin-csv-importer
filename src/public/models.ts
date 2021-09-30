@@ -1,6 +1,6 @@
 export enum EntitiesTypes {
-    nodes,
-    edges
+    NODES,
+    EDGES
 }
 
 export interface CategoriesMapping {

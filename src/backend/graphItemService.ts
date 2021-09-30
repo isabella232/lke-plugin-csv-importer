@@ -1,11 +1,24 @@
 import {RestClient, RunQueryResponse} from '@linkurious/rest-client';
 import {GroupedErrors, log, RowErrorMessage} from './utils';
-import {ImportEdgesParams, ImportItemsResponse, ImportNodesParams} from '../@types/shared';
+import {ImportEdgesParams, ImportState, ImportNodesParams} from '../@types/shared';
+import {CSVUtils, ParsedCSV} from './shared';
+
+/**
+ * This type is convenient to separate concerns among `buildEdgesQuery()`,
+ * `cacheGraphNodeIDs()` and `errors.add()`
+ */
+export interface GroupedRecords {
+  rows: unknown[][];
+  UIDs: string[];
+  rowNumbers: number[];
+}
 
 export class GraphItemService {
   // Cache from category + UID to graph ID
   static nodeIDS = new Map<string, number>();
-  public importResult: ImportItemsResponse | undefined;
+  public importState: ImportState = {
+    importing: false
+  };
 
   /**
    * Returns a query that creates nodes.
@@ -93,28 +106,38 @@ export class GraphItemService {
     return queryResponse.body;
   }
 
-  public updateProgress(processed: number, total: number, errors: GroupedErrors): void {
-    this.importResult = {
-      status: 'importing',
-      progress: Math.floor(processed / (total + 1)),
-      success: total - errors.total,
-      failed: errors.total,
-      error: errors.toObject()
+  public updateImportProgress(total: number, processed: number): void {
+    this.importState = {
+      importing: true,
+      progress: Math.floor(processed / (total + 1))
     };
   }
 
-  public endProgress(total: number, errors: GroupedErrors): void {
-    if (errors.total === 0) {
-      this.importResult = {
-        status: 'done',
-        success: total
+  public finishImport(errors: string): void;
+  public finishImport(errors: GroupedErrors, total: number): void;
+  public finishImport(errors: GroupedErrors | string, total?: number): void {
+    if (typeof errors === 'string') {
+      this.importState = {
+        importing: false,
+        lastImport: {
+          globalError: errors
+        }
+      };
+    } else if (errors.total === 0) {
+      this.importState = {
+        importing: false,
+        lastImport: {
+          success: total!
+        }
       };
     } else {
-      this.importResult = {
-        status: 'done',
-        success: total - errors.total,
-        failed: errors.total,
-        error: errors.toObject()
+      this.importState = {
+        importing: false,
+        lastImport: {
+          success: total! - errors.total,
+          failed: errors.total,
+          error: errors.toObject()
+        }
       };
     }
   }
@@ -123,19 +146,28 @@ export class GraphItemService {
     rc: RestClient,
     params: ImportNodesParams | ImportEdgesParams
   ): Promise<void> {
+    // Check for global errors
+    const parsedCSV = CSVUtils.parseCSV(params.csv);
+    if ('error' in parsedCSV) {
+      this.finishImport(parsedCSV.error);
+      return;
+    }
+
     const isEdge = 'sourceType' in params;
-    let total: number;
-    let headers: string[];
-    let batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[];
-    let badRows: [RowErrorMessage, number[]][];
+    const totalRecords = parsedCSV.records.length;
+    let propertyKeys: string[];
+    let batchedRows: GroupedRecords[];
+    let badRows: [RowErrorMessage, number[]][] = [];
 
     // 1. Batch items
     if (isEdge) {
-      ({total, headers, batchedRows, badRows} = GraphItemService.createEdgeBatches(
-        params as ImportEdgesParams
+      ({propertyKeys, batchedRows, badRows} = GraphItemService.createEdgeBatches(
+        parsedCSV,
+        (params as ImportEdgesParams).sourceType,
+        (params as ImportEdgesParams).destinationType
       ));
     } else {
-      ({total, headers, batchedRows, badRows} = GraphItemService.createNodeBatches(params.csv));
+      ({propertyKeys, batchedRows} = GraphItemService.createNodeBatches(parsedCSV));
     }
 
     // 2. Keep track of the errors
@@ -148,154 +180,44 @@ export class GraphItemService {
       try {
         if (isEdge) {
           // 3.a. Build and run a query to create edges
-          const query = GraphItemService.buildEdgesQuery(params.itemType, headers, batch.rows);
+          const query = GraphItemService.buildEdgesQuery(params.itemType, propertyKeys, batch.rows);
           await GraphItemService.runCypherQuery(rc, query, params.sourceKey);
         } else {
           // 3.a. Build and run a query to create nodes
-          const query = GraphItemService.buildNodesQuery(params.itemType, headers, batch.rows);
+          const query = GraphItemService.buildNodesQuery(params.itemType, propertyKeys, batch.rows);
           const response = await GraphItemService.runCypherQuery(rc, query, params.sourceKey);
           GraphItemService.cacheGraphNodeIDs(params.itemType, response, batch.UIDs);
         }
       } catch (e) {
         log('Batch has failed', e);
-        errors.add(e, batch.indices);
+        errors.add(e, batch.rowNumbers);
       }
-      this.updateProgress(i, total, errors);
+      this.updateImportProgress(totalRecords, i);
     }
 
     // LKE-4201 Remove the CSV_PLUGIN category
-    await GraphItemService.runCypherQuery(rc,'MATCH(c:CSV_PLUGIN) DETACH DELETE c RETURN 0', params.sourceKey);
+    await GraphItemService.runCypherQuery(
+      rc,
+      'MATCH(c:CSV_PLUGIN) DETACH DELETE c RETURN 0',
+      params.sourceKey
+    );
 
-    this.endProgress(total, errors);
+    this.finishImport(errors, totalRecords);
   }
 
-  /**
-   * Parse a CSV string value intro a string, number or boolean
-   */
-  public static parseValue(value: string): string | number | boolean | null {
-    // Properties without value
-    if (value === '') {
-      return null; // Cypher ignores null properties when creating
-    }
-    // Numerical properties
-    if (/^(0|([1-9]\d*))(\.\d+)?$/.test(value)) {
-      return Number.parseFloat(value);
-    }
-    // Boolean properties
-    if (value === 'true') {
-      return true;
-    }
-    if (value === 'false') {
-      return false;
-    }
-    return value;
-  }
-
-  /**
-   * TODO take care of escaping commas, line-breaks, etc...
-   * EOL is \n on POSIX and \r\n on Windows
-   */
-  public static createNodeBatches(csv: string): {
-    total: number;
-    headers: string[];
-    batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[];
-    badRows: [RowErrorMessage, number[]][];
+  public static createNodeBatches(parsedCSV: ParsedCSV): {
+    propertyKeys: string[];
+    batchedRows: GroupedRecords[];
   } {
     const MAX_BATCH_SIZE = 10;
-    let count = 1;
-    let headers: unknown[] | undefined = undefined;
-    let batchedRows: {indices: number[]; UIDs: string[]; rows: unknown[][]}[] = [];
-    const tooManyOrMissingProperties: number[] = [];
-    for (const row of csv.split(/\r?\n/)) {
-      const values = row.split(',').map(GraphItemService.parseValue);
+    let batchedRows: GroupedRecords[] = [];
+    for (let i = 0; i < parsedCSV.records.length; i++) {
+      const properties = parsedCSV.records[i];
+      const UID = properties[0];
+      // The items to import are in rows 2, 3, etc (the header is row 1)
+      const rowNumber = i + 2;
 
-      if (headers === undefined) {
-        // We skip the first column (uid)
-        headers = values.slice(1);
-      } else {
-        count++;
-        const [UID, ...properties] = values;
-        if (properties.length !== headers.length) {
-          tooManyOrMissingProperties.push(count);
-          continue;
-        }
-
-        // Assign node to a batch
-        if (
-          // Initialize the batch
-          batchedRows.length === 0 ||
-          // First batch is of one element to build and cache the query execution plan in neo4j
-          batchedRows.length === 1 ||
-          // Create a new batch if last batch has reached `MAX_BATCH_SIZE` elements
-          batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE
-        ) {
-          batchedRows.push({indices: [count], rows: [properties], UIDs: [UID + '']});
-        } else {
-          batchedRows[batchedRows.length - 1].indices.push(count);
-          batchedRows[batchedRows.length - 1].rows.push(properties);
-          batchedRows[batchedRows.length - 1].UIDs.push(UID + '');
-        }
-      }
-    }
-    GraphItemService.checkNonEmptyHeaders(headers);
-    return {
-      // The header is not an item
-      total: count - 1,
-      headers: headers,
-      batchedRows: batchedRows,
-      badRows: [[RowErrorMessage.TOO_MANY_OR_MISSING_PROPERTIES, tooManyOrMissingProperties]]
-    };
-  }
-
-  /**
-   * TODO take care of escaping commas, line-breaks, etc...
-   * EOL is \n on POSIX and \r\n on Windows
-   *
-   * Returns edges split in batches and edges that have no extremities cached
-   */
-  public static createEdgeBatches(params: ImportEdgesParams): {
-    total: number;
-    headers: string[];
-    batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[];
-    badRows: [RowErrorMessage, number[]][];
-  } {
-    const MAX_BATCH_SIZE = 10;
-    let count = 1;
-    let headers: unknown[] | undefined = undefined;
-    let batchedRows: {indices: number[]; rows: unknown[][]; UIDs: string[]}[] = [];
-    const noExtremitiesRows: number[] = [];
-    const tooManyOrMissingProperties: number[] = [];
-
-    // Parse row by row
-    for (const row of params.csv.split(/\r?\n/)) {
-      const values = row.split(',').map(GraphItemService.parseValue);
-
-      // First row is for headers
-      if (headers === undefined) {
-        // We skip the first column (source node uid) and the second column (target node uid)
-        headers = values.slice(2);
-        continue;
-      }
-
-      // Rest of the rows are for edges
-      count++;
-      let [from, to, ...properties] = values;
-      if (properties.length !== headers.length) {
-        tooManyOrMissingProperties.push(count);
-        continue;
-      }
-
-      const sourceID = GraphItemService.nodeIDS.get(params.sourceType + from);
-      const targetID = GraphItemService.nodeIDS.get(params.destinationType + to);
-
-      // Exclude edge from the batches if its extremities are not found
-      if (sourceID === undefined || targetID === undefined) {
-        noExtremitiesRows.push(count);
-        continue;
-      }
-
-      // Assign edge to a batch
-      properties = [sourceID, targetID, ...properties];
+      // Assign node to a batch
       if (
         // Initialize the batch
         batchedRows.length === 0 ||
@@ -304,36 +226,73 @@ export class GraphItemService {
         // Create a new batch if last batch has reached `MAX_BATCH_SIZE` elements
         batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE
       ) {
-        batchedRows.push({indices: [count], rows: [properties], UIDs: []});
+        batchedRows.push({rowNumbers: [rowNumber], rows: [properties], UIDs: [UID + '']});
       } else {
-        batchedRows[batchedRows.length - 1].indices.push(count);
+        batchedRows[batchedRows.length - 1].rowNumbers.push(rowNumber);
         batchedRows[batchedRows.length - 1].rows.push(properties);
+        batchedRows[batchedRows.length - 1].UIDs.push(UID + '');
       }
     }
-    GraphItemService.checkNonEmptyHeaders(headers);
     return {
-      // The header is not an item
-      total: count - 1,
-      headers: headers,
-      batchedRows: batchedRows,
-      badRows: [
-        [RowErrorMessage.SOURCE_TARGET_NOT_FOUND, noExtremitiesRows],
-        [RowErrorMessage.TOO_MANY_OR_MISSING_PROPERTIES, tooManyOrMissingProperties]
-      ]
+      propertyKeys: parsedCSV.headers.slice(),
+      batchedRows: batchedRows
     };
   }
 
   /**
-   * Check that the first line of the csv is not empty
+   * Returns edges split in groups
    */
-  private static checkNonEmptyHeaders(headers: unknown): asserts headers is string[] {
-    if (
-      !Array.isArray(headers) ||
-      headers.some((h) => typeof h !== 'string' || h.length === 0)
-    ) {
-      log(headers);
-      throw new Error('Headers cannot be empty');
+  public static createEdgeBatches(
+    parsedCSV: ParsedCSV,
+    sourceType: string,
+    destinationType: string
+  ): {
+    propertyKeys: string[];
+    batchedRows: GroupedRecords[];
+    badRows: [RowErrorMessage, number[]][];
+  } {
+    // We skip the first column (source node uid) and the second column (target node uid)
+    const propertyKeys = parsedCSV.headers.slice(2);
+
+    const MAX_BATCH_SIZE = 10;
+    let batchedRows: GroupedRecords[] = [];
+    const noExtremitiesRows: number[] = [];
+
+    // Parse row by row
+    for (let i = 0; i < parsedCSV.records.length; i++) {
+      let [from, to, ...propertyValues] = parsedCSV.records[i - 1];
+      // The items to import are in rows 2, 3, etc (the header is row 1)
+      const rowNumber = i + 2;
+
+      const sourceID = GraphItemService.nodeIDS.get(sourceType + from);
+      const targetID = GraphItemService.nodeIDS.get(destinationType + to);
+
+      // Exclude edge from the batches if its extremities are not found
+      if (sourceID === undefined || targetID === undefined) {
+        noExtremitiesRows.push(rowNumber);
+        continue;
+      }
+
+      // Assign edge to a batch
+      propertyValues = [sourceID, targetID, ...propertyValues];
+      if (
+        // Initialize the batch
+        batchedRows.length === 0 ||
+        // First batch is of one element to build and cache the query execution plan in neo4j
+        batchedRows.length === 1 ||
+        // Create a new batch if last batch has reached `MAX_BATCH_SIZE` elements
+        batchedRows[batchedRows.length - 1].rows.length === MAX_BATCH_SIZE
+      ) {
+        batchedRows.push({rowNumbers: [rowNumber], rows: [propertyValues], UIDs: []});
+      } else {
+        batchedRows[batchedRows.length - 1].rowNumbers.push(rowNumber);
+        batchedRows[batchedRows.length - 1].rows.push(propertyValues);
+      }
     }
-    // TODO check missing required properties (schemas) and unexpected properties (strict-schema)
+    return {
+      propertyKeys: propertyKeys,
+      batchedRows: batchedRows,
+      badRows: [[RowErrorMessage.SOURCE_TARGET_NOT_FOUND, noExtremitiesRows]]
+    };
   }
 }
