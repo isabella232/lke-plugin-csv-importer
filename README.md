@@ -88,29 +88,27 @@ After the import, you will get one of the following results:
 
 2. **Failed**: Nothing has been imported
 
+   **a. No source key defined in URL**
+
+   **b. No headers provided**:
+   Your CSV file starts with an empty line
+
+   **c. Header value is empty**:
+   One or more header values have no content
+
+   **d. Missing/Too many values in records**:
+   Some records have less/more columns than the headers
+
 3. **Incomplete**: Some nodes/edges failed to be imported due to one of the following reasons:
 
-   **a. Schema non-compliant data**:
-      The schema type has phone as number, but in the csv the value of phone is a string. Same for date or booleans or other incompatible types
+   **a. Source or target node not found**
 
-   **b. Unexpected properties (in strict schema)**:
-      If the schema type has name and phone, but in your csv you have the headers name, phone, email, then it will fail for email
+   **b. Data-source is not available**:
+      Data source is not available or it is set to read only.
+   
+   **c. Unauthorized access to the data-source**
 
-   **c. Missing required properties**:
-      If the schema type has phone as required, but your csv has only name
-
-   **d. There are not as many properties as headers**:
-      Your header has 3 property names, but some rows have less than 3 or more than 3 comma-separated values
-
-   **e. Source or target node not found**
-
-   **f. Data-source is not available**:
-      Data source is not available or is set to read only.
-
-
-   **g. Unauthorized access to the data-source**
-
-   **h. Unexpected error, check the logs**:
+   **d. Unexpected error, check the logs**:
       Default message if error is unknown. You can download the logs following [these steps] (https://doc.linkurio.us/admin-manual/latest/support/)
 
 ## Limitations
