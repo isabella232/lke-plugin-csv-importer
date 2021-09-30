@@ -64,7 +64,23 @@ In order to do so:
 
 ## Use the plugin
 
-1. Choose your CSV file and click the Upload button
+1. Choose your CSV file and click the Upload button. You can get one of the following errors:
+    
+   **a. No source key defined in URL**
+
+   **b. No headers provided**:
+   Your CSV file starts with an empty line
+
+   **c. Header value is empty**:
+   One or more header values have no content
+
+   **d. Missing values in records: 1, 4~7, 9, ...**:
+   Some records have less columns than the headers
+
+   **e. Too many values in records: 1, 4~7, 9, ...**:
+   Some records have more columns than the headers
+    
+    
 2. Specify if you are uploading nodes or edges
 
 ![](readme_assets/choosetype.png)
@@ -87,17 +103,6 @@ After the import, you will get one of the following results:
 1. **Successful**: All nodes / edges have been imported
 
 2. **Failed**: Nothing has been imported
-
-   **a. No source key defined in URL**
-
-   **b. No headers provided**:
-   Your CSV file starts with an empty line
-
-   **c. Header value is empty**:
-   One or more header values have no content
-
-   **d. Missing/Too many values in records**:
-   Some records have less/more columns than the headers
 
 3. **Incomplete**: Some nodes/edges failed to be imported due to one of the following reasons:
 
