@@ -36,21 +36,24 @@ export class CSVImportFeedback {
       return;
     }
     const total = feedback.success + (feedback.failed ? feedback.failed : 0);
-    const item = isEdge ? 'edges' : 'nodes';
+    let item = isEdge ? 'edge' : 'node';
     let errors = '';
     Object.entries(feedback.error || {}).forEach(([key, value], index) => {
       const jumpLine = Object.entries(feedback.error || {}).length === index + 1 ? '.' : ' \n\n';
       errors += key + '\n' + `${value.length === 1 && !value[0].includes('~') ? 'Row' : 'Rows'}: ${value.join(', ')}${jumpLine}`;
     });
     switch (total) {
-      case feedback.success:
+      case feedback.success: {
+        item += total > 1 ? 's' : '';
+        const article = total > 1 ? 'them' : 'it';
         this.fillImportFeedback(
-          `All ${total} ${item} have been imported`,
+          `All ${total} ${item} have been imported. Please index the data-source to make ${article} searchable`,
           'Import successful',
           'success'
-          )
+        )
         break;
-      case feedback.failed:
+      }
+      case feedback.failed: {
         this.fillImportFeedback(
           'Nothing has been imported',
           'Import failed',
@@ -58,17 +61,24 @@ export class CSVImportFeedback {
           errors
         )
         break;
-      default :
-        const error = feedback.failed === 1 ? 'error' : 'errors';
+      }
+      default : {
+        const failedPlural = feedback.failed! > 1 ? 's' : '';
+        const error = 'error' + failedPlural;
+        const failedItem = item + failedPlural;
+        const successArticle = feedback.success > 1 ? 'them' : 'it';
+        const successItem = item + (feedback.success > 1 ? 's' : '');
         this.fillImportFeedback(
-          `${feedback.failed}/${total} ${item} have not been imported due to the following ${error}`,
+          `Only ${feedback.success}/${total} ${successItem} have been imported. Please index the data-source to make ${successArticle} searchable.<br><br>` +
+          `While ${feedback.failed}/${total} ${failedItem} have <i>not</i> been imported due to the following ${error}`,
           'Import incomplete',
           'incomplete',
           errors,
-          `Re-upload only the failed ${feedback.failed === 1 ? 'row' : 'rows'}`
-        )
+          `Please only re-upload only the failed row${failedPlural} when retrying.`
+        );
 
         break;
+      }
     }
 
   }

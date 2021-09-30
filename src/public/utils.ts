@@ -35,7 +35,7 @@ function stopWaiting() {
 }
 
 /**
- * Go back to linkurious home page
+ * Go back to linkurious data-source settings page
  */
 function goToLinkurious(sourceKey: string) {
   let basePath;
@@ -45,7 +45,7 @@ function goToLinkurious(sourceKey: string) {
   } else {
     basePath = '/' + match[1];
   }
-  const location = window.location.origin + basePath + `/dashboard?key=${sourceKey}`;
+  const location = window.location.origin + basePath + `/admin/data?key=${sourceKey}`;
   window.location = (location as unknown) as Location;
 }
 

@@ -39,6 +39,9 @@ export class CSVUtils {
       return {error: 'Header value is empty'};
     }
 
+    // Remove the headers
+    parseResult.data.shift();
+
     // We remove any trailing empty line if any
     const lastRecord = parseResult.data[parseResult.data.length - 1];
     if (lastRecord.length === 1 && lastRecord[0] === null) {

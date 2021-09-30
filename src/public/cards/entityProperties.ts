@@ -1,4 +1,4 @@
-import {EntitiesTypes} from "../models";
+import {EntityType} from "../models";
 import * as utils from "../utils";
 import {ImportResult, ImportState} from "../../@types/shared";
 
@@ -12,7 +12,7 @@ export class CSVEntityProperties {
   private entityProperties!: HTMLElement;
   private titleHolder!: HTMLElement;
   private nextButton!: HTMLButtonElement;
-  private entityType!: EntitiesTypes;
+  private entityType!: EntityType;
   private titleCompleter = ["node", "edge"];
 
   init() {
@@ -29,8 +29,9 @@ export class CSVEntityProperties {
     this.hideCard();
   }
 
-  setTitle(entityType: EntitiesTypes, headers: string[]) {
-    if (headers.length > 0) {
+  setTitle(entityType: EntityType, headers: string[]) {
+    // For edges only the first 2 headers are not property keys, for nodes all the headers are property keys
+    if (headers.length > (entityType === EntityType.NODE ? 0 : 2)) {
       this.titleHolder.innerText = `The following will be mapped to ${this.titleCompleter[entityType]} properties`;
     } else {
       this.titleHolder.innerText = `There are no ${this.titleCompleter[entityType]} properties in the file`;
@@ -40,11 +41,11 @@ export class CSVEntityProperties {
   /**
    * show properties name that will be added to each node (headers name)
    */
-  setNameProperties(entityType: EntitiesTypes, headers: string[]) {
+  setNameProperties(entityType: EntityType, headers: string[]) {
     utils.removeChildrenOf(this.entityProperties);
     if (headers.length > 0) {
       const propertyNames =
-        entityType === EntitiesTypes.NODES
+        entityType === EntityType.NODE
           ? headers
           : headers.slice(2);
       propertyNames.forEach((header: string) => {
@@ -53,9 +54,9 @@ export class CSVEntityProperties {
     }
   }
 
-  setButtonName(entityType: EntitiesTypes) {
+  setButtonName(entityType: EntityType) {
     this.nextButton.innerText =
-      entityType === EntitiesTypes.NODES ? "Import" : "Next";
+      entityType === EntityType.NODE ? "Import" : "Next";
   }
 
   /**
@@ -113,7 +114,7 @@ export class CSVEntityProperties {
     sourceKey?: string
   ): Promise<ImportResult | undefined> {
     this.hideCard();
-    if (this.entityType === EntitiesTypes.NODES) {
+    if (this.entityType === EntityType.NODE) {
       return this.importNodes(csv, entityName, sourceKey);
     }
     return;
@@ -124,7 +125,7 @@ export class CSVEntityProperties {
   }
 
   showCard(
-    entityType?: EntitiesTypes,
+    entityType?: EntityType,
     headers?: string[]
   ) {
     if (entityType !== undefined && headers !== undefined) {

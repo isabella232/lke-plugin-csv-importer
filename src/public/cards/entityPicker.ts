@@ -1,4 +1,4 @@
-import { EntitiesTypes } from "../models";
+import { EntityType } from "../models";
 
 /**
  * Class that handles all the logic for the entity picker card
@@ -9,7 +9,7 @@ export class CSVEntityPicker {
   private options!: NodeListOf<HTMLInputElement>;
   private nextButton!: HTMLButtonElement;
 
-  public entityType: EntitiesTypes | null = null;
+  public entityType: EntityType | null = null;
 
   init() {
     this.container = document.getElementById(
@@ -18,11 +18,11 @@ export class CSVEntityPicker {
     this.options = document.getElementsByName(
       "entities"
     ) as NodeListOf<HTMLInputElement>;
-    this.options[EntitiesTypes.NODES].addEventListener("change", () =>
-      this.updateRadioButton(EntitiesTypes.NODES)
+    this.options[EntityType.NODE].addEventListener("change", () =>
+      this.updateRadioButton(EntityType.NODE)
     );
-    this.options[EntitiesTypes.EDGES].addEventListener("change", () =>
-      this.updateRadioButton(EntitiesTypes.EDGES)
+    this.options[EntityType.EDGE].addEventListener("change", () =>
+      this.updateRadioButton(EntityType.EDGE)
     );
     this.nextButton = document.getElementById(
       "nextButtonEntity"
@@ -33,14 +33,14 @@ export class CSVEntityPicker {
 
   cleanState() {
     this.entityType = null;
-    this.options[EntitiesTypes.NODES].checked = false;
-    this.options[EntitiesTypes.EDGES].checked = false;
+    this.options[EntityType.NODE].checked = false;
+    this.options[EntityType.EDGE].checked = false;
     this.nextButton.disabled = true;
   }
 
-  updateRadioButton(value: EntitiesTypes) {
-    this.options[EntitiesTypes.NODES].checked = value === EntitiesTypes.NODES;
-    this.options[EntitiesTypes.EDGES].checked = value === EntitiesTypes.EDGES;
+  updateRadioButton(value: EntityType) {
+    this.options[EntityType.NODE].checked = value === EntityType.NODE;
+    this.options[EntityType.EDGE].checked = value === EntityType.EDGE;
     this.entityType = value;
     this.nextButton.disabled = false;
   }

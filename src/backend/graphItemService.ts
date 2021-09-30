@@ -260,7 +260,7 @@ export class GraphItemService {
 
     // Parse row by row
     for (let i = 0; i < parsedCSV.records.length; i++) {
-      let [from, to, ...propertyValues] = parsedCSV.records[i - 1];
+      let [from, to, ...propertyValues] = parsedCSV.records[i];
       // The items to import are in rows 2, 3, etc (the header is row 1)
       const rowNumber = i + 2;
 

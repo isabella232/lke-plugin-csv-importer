@@ -1,4 +1,4 @@
-import {EntitiesTypes} from "../models";
+import {EntityType} from "../models";
 
 /**
  * Class that handles all logic of the entity name card
@@ -25,7 +25,7 @@ export class CSVEntityName {
     this.hideCard();
   }
 
-  setTitle(entityType: EntitiesTypes) {
+  setTitle(entityType: EntityType) {
     this.titleHolder.innerText = `Is this the ${this.titleCompleter[entityType]}?`;
   }
 
@@ -42,7 +42,7 @@ export class CSVEntityName {
     this.container.style.display = "none";
   }
 
-  showCard(entityType?: EntitiesTypes, entityName?: string) {
+  showCard(entityType?: EntityType, entityName?: string) {
     if (entityType !== undefined) {
       this.setTitle(entityType);
     }
