@@ -18,11 +18,11 @@ export class CSVEntityPicker {
     this.options = document.getElementsByName(
       "entities"
     ) as NodeListOf<HTMLInputElement>;
-    this.options[EntitiesTypes.nodes].addEventListener("change", () =>
-      this.updateRadioButton(EntitiesTypes.nodes)
+    this.options[EntitiesTypes.NODES].addEventListener("change", () =>
+      this.updateRadioButton(EntitiesTypes.NODES)
     );
-    this.options[EntitiesTypes.edges].addEventListener("change", () =>
-      this.updateRadioButton(EntitiesTypes.edges)
+    this.options[EntitiesTypes.EDGES].addEventListener("change", () =>
+      this.updateRadioButton(EntitiesTypes.EDGES)
     );
     this.nextButton = document.getElementById(
       "nextButtonEntity"
@@ -33,14 +33,14 @@ export class CSVEntityPicker {
 
   cleanState() {
     this.entityType = null;
-    this.options[EntitiesTypes.nodes].checked = false;
-    this.options[EntitiesTypes.edges].checked = false;
+    this.options[EntitiesTypes.NODES].checked = false;
+    this.options[EntitiesTypes.EDGES].checked = false;
     this.nextButton.disabled = true;
   }
 
   updateRadioButton(value: EntitiesTypes) {
-    this.options[EntitiesTypes.nodes].checked = value === EntitiesTypes.nodes;
-    this.options[EntitiesTypes.edges].checked = value === EntitiesTypes.edges;
+    this.options[EntitiesTypes.NODES].checked = value === EntitiesTypes.NODES;
+    this.options[EntitiesTypes.EDGES].checked = value === EntitiesTypes.EDGES;
     this.entityType = value;
     this.nextButton.disabled = false;
   }

@@ -13,7 +13,7 @@ import {EntityType} from "@linkurious/rest-client";
 function main() {
 
   let sourceKey: string;
-  let propertiesName: string | undefined;
+  let headers: string[];
   let entityName: string;
   let csv = "";
 
@@ -59,7 +59,7 @@ function main() {
   const showExampleButton = document.getElementById("showExampleButton") as HTMLElement;
   fileInput.addEventListener("change", uploader.showFile.bind(uploader));
   readButton.addEventListener("click", async () => {
-    ({sourceKey, csv, propertiesName, entityName} = await uploader.readFile());
+    ({sourceKey, csv, headers, entityName} = await uploader.readFile());
     entityPicker.showCard();
   });
   showExampleButton.addEventListener("click", () => {
@@ -110,7 +110,7 @@ function main() {
   });
   nextButtonCat.addEventListener("click", () => {
     entityNameCard.hideCard();
-    entityProperties.showCard(entityPicker.entityType!, propertiesName);
+    entityProperties.showCard(entityPicker.entityType!, headers);
   });
 
   // entity properties event handler

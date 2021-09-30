@@ -1,6 +1,6 @@
 import {EntitiesTypes} from "../models";
 import * as utils from "../utils";
-import {ImportItemsResponse} from "../../@types/shared";
+import {ImportResult, ImportState} from "../../@types/shared";
 
 /**
  * Class that handles all the logic for the entity properties card
@@ -29,22 +29,25 @@ export class CSVEntityProperties {
     this.hideCard();
   }
 
-  setTitle(entityType: EntitiesTypes) {
-    this.titleHolder.innerText = `The following will be mapped to ${this.titleCompleter[entityType]} properties`;
+  setTitle(entityType: EntitiesTypes, headers: string[]) {
+    if (headers.length > 0) {
+      this.titleHolder.innerText = `The following will be mapped to ${this.titleCompleter[entityType]} properties`;
+    } else {
+      this.titleHolder.innerText = `There are no ${this.titleCompleter[entityType]} properties in the file`;
+    }
   }
 
   /**
    * show properties name that will be added to each node (headers name)
    */
-  setNameProperties(entityType: EntitiesTypes, propertiesName?: string) {
+  setNameProperties(entityType: EntitiesTypes, headers: string[]) {
     utils.removeChildrenOf(this.entityProperties);
-    if (propertiesName) {
-      const headersParsed = propertiesName.split(",");
-      const headersFinal =
-        entityType === EntitiesTypes.nodes
-          ? headersParsed
-          : headersParsed.slice(2);
-      headersFinal.forEach((header: string) => {
+    if (headers.length > 0) {
+      const propertyNames =
+        entityType === EntitiesTypes.NODES
+          ? headers
+          : headers.slice(2);
+      propertyNames.forEach((header: string) => {
         this.addProperty(header);
       });
     }
@@ -52,7 +55,7 @@ export class CSVEntityProperties {
 
   setButtonName(entityType: EntitiesTypes) {
     this.nextButton.innerText =
-      entityType === EntitiesTypes.nodes ? "Import" : "Next";
+      entityType === EntitiesTypes.NODES ? "Import" : "Next";
   }
 
   /**
@@ -72,7 +75,7 @@ export class CSVEntityProperties {
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<ImportItemsResponse> {
+  ): Promise<ImportResult> {
     utils.startWaiting();
     try {
       await utils.makeRequest("POST", "api/importNodes", {
@@ -80,7 +83,7 @@ export class CSVEntityProperties {
         itemType: entityName,
         csv: csv
       });
-      return await this.importListener()
+      return this.importListener()
     } catch (error) {
       throw new Error("Import has failed");
     } finally {
@@ -88,13 +91,13 @@ export class CSVEntityProperties {
     }
   }
 
-  async importListener(): Promise<ImportItemsResponse> {
+  async importListener(): Promise<ImportResult> {
     return new Promise((resolve) => {
       setTimeout(async () => {
         const response = await utils.makeRequest("POST", "api/importStatus", {});
-        const parsedResponse: ImportItemsResponse = JSON.parse(response.response);
-        if (parsedResponse.status === 'done') {
-          resolve(parsedResponse)
+        const parsedResponse: ImportState = JSON.parse(response.response);
+        if (!parsedResponse.importing) {
+          resolve(parsedResponse.lastImport!);
         } else {
           utils.updateProgress(parsedResponse.progress);
           resolve(await this.importListener())
@@ -104,15 +107,16 @@ export class CSVEntityProperties {
 
   }
 
-  nextStep(
+  async nextStep(
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<ImportItemsResponse> | void {
+  ): Promise<ImportResult | undefined> {
     this.hideCard();
-    if (this.entityType === EntitiesTypes.nodes) {
+    if (this.entityType === EntitiesTypes.NODES) {
       return this.importNodes(csv, entityName, sourceKey);
     }
+    return;
   }
 
   hideCard() {
@@ -121,12 +125,12 @@ export class CSVEntityProperties {
 
   showCard(
     entityType?: EntitiesTypes,
-    propertiesName?: string,
+    headers?: string[]
   ) {
-    if (entityType !== undefined) {
+    if (entityType !== undefined && headers !== undefined) {
       this.entityType = entityType;
-      this.setTitle(entityType);
-      this.setNameProperties(entityType, propertiesName);
+      this.setTitle(entityType, headers);
+      this.setNameProperties(entityType, headers);
       this.setButtonName(entityType);
     }
     this.container.style.display = "block";

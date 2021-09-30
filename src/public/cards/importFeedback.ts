@@ -1,4 +1,4 @@
-import {ImportItemsResponse} from "../../@types/shared";
+import {ImportResult} from "../../@types/shared";
 
 /**
  * Class that handles all logic for the last card
@@ -24,8 +24,17 @@ export class CSVImportFeedback {
     this.hideCard();
   }
 
-  setFeedback(feedback: ImportItemsResponse, isEdge?: boolean) {
-    this.importStatus.classList.remove('success', 'failed', 'incomplete')
+  setFeedback(feedback: ImportResult, isEdge?: boolean) {
+    this.importStatus.classList.remove('success', 'failed', 'incomplete');
+    if ('globalError' in feedback) {
+      this.fillImportFeedback(
+        'Nothing has been imported',
+        'Import failed',
+        'failed',
+        feedback.globalError
+      )
+      return;
+    }
     const total = feedback.success + (feedback.failed ? feedback.failed : 0);
     const item = isEdge ? 'edges' : 'nodes';
     let errors = '';
@@ -35,37 +44,47 @@ export class CSVImportFeedback {
     });
     switch (total) {
       case feedback.success:
-        this.importFeedback.innerText = `All ${total} ${item} have been imported`;
-        this.importStatus.innerText = 'Import successful';
-        this.importStatus.classList.add('success');
+        this.fillImportFeedback(
+          `All ${total} ${item} have been imported`,
+          'Import successful',
+          'success'
+          )
         break;
       case feedback.failed:
-        this.importFeedback.innerText = `Nothing has been imported`;
-
-        this.importStatus.innerText = 'Import failed';
-        this.importStatus.classList.add('failed');
-
-        this.importError.style.display = 'block';
-        this.importError.innerText = errors;
-
+        this.fillImportFeedback(
+          'Nothing has been imported',
+          'Import failed',
+          'failed',
+          errors
+        )
         break;
       default :
         const error = feedback.failed === 1 ? 'error' : 'errors';
-
-        this.importFeedback.innerText = `${feedback.failed}/${total} ${item} have not been imported due to the following ${error}`;
-
-        this.importStatus.innerText = 'Import incomplete';
-        this.importStatus.classList.add('incomplete');
-
-        this.importErrorHelp.style.display = 'block';
-        this.importErrorHelp.innerText = `Re-upload only the failed ${feedback.failed === 1 ? 'row' : 'rows'}`;
-
-        this.importError.innerText = errors;
-        this.importError.style.display = 'block';
+        this.fillImportFeedback(
+          `${feedback.failed}/${total} ${item} have not been imported due to the following ${error}`,
+          'Import incomplete',
+          'incomplete',
+          errors,
+          `Re-upload only the failed ${feedback.failed === 1 ? 'row' : 'rows'}`
+        )
 
         break;
     }
 
+  }
+
+  fillImportFeedback(feedback: string, status: string, _class: string, errors?: string, errorHelp?: string) {
+    this.importFeedback.innerText = feedback;
+    this.importStatus.innerText = status;
+    this.importStatus.classList.add(_class);
+    if (errors) {
+      this.importError.style.display = 'block';
+      this.importError.innerText = errors;
+    }
+    if (errorHelp) {
+      this.importErrorHelp.style.display = 'block';
+      this.importErrorHelp.innerText = errorHelp;
+    }
   }
 
   hideCard() {
@@ -74,8 +93,8 @@ export class CSVImportFeedback {
     this.importError.style.display = 'none';
   }
 
-  showCard(importResponse: ImportItemsResponse, isEdge?: boolean) {
-    this.setFeedback(importResponse, isEdge);
+  showCard(importResult: ImportResult, isEdge?: boolean) {
+    this.setFeedback(importResult, isEdge);
     this.container.style.display = "block";
   }
 }

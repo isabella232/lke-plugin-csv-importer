@@ -1,6 +1,6 @@
 import {CategoriesMapping} from "../models";
 import * as utils from "../utils";
-import {ImportItemsResponse} from "../../@types/shared";
+import {ImportState, ImportResult} from "../../@types/shared";
 
 /**
  * Class that handles all logic related to the edge mapping card
@@ -45,7 +45,7 @@ export class CSVEdgeMapping {
     categoriesMapping: CategoriesMapping,
     entityName?: string,
     sourceKey?: string
-  ): Promise<ImportItemsResponse> {
+  ): Promise<ImportResult> {
     utils.startWaiting();
     try {
       await utils.makeRequest(
@@ -59,7 +59,7 @@ export class CSVEdgeMapping {
           destinationType: categoriesMapping.destination
         }
       );
-      return await this.importListener()
+      return this.importListener()
     } catch (error) {
       throw new Error("Import has failed");
     } finally {
@@ -67,27 +67,26 @@ export class CSVEdgeMapping {
     }
   }
 
-  async importListener(): Promise<ImportItemsResponse> {
+  async importListener(): Promise<ImportResult> {
     return new Promise((resolve) => {
       setTimeout(async () => {
         const response = await utils.makeRequest("POST", "api/importStatus", {});
-        const parsedResponse: ImportItemsResponse = JSON.parse(response.response);
-        if (parsedResponse.status === 'done') {
-          resolve(parsedResponse)
+        const parsedResponse: ImportState = JSON.parse(response.response);
+        if (!parsedResponse.importing) {
+          resolve(parsedResponse.lastImport!)
         } else {
           utils.updateProgress(parsedResponse.progress);
           resolve(await this.importListener())
         }
       }, 1000)
     })
-
   }
 
   async importAndFeedback(
     csv: string,
     entityName?: string,
     sourceKey?: string
-  ): Promise<ImportItemsResponse> {
+  ): Promise<ImportResult> {
     const feedback = await this.importEdges(
       csv,
       {
