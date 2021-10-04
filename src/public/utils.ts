@@ -20,7 +20,9 @@ function startWaiting() {
 
 function updateProgress(progress: number | undefined) {
   const info = document.getElementById("importInfo");
-  info!.innerHTML = `Currently importing data ${progress}%`
+  if (info) {
+    info!.innerHTML = `Currently importing data ${progress}%`
+  }
 }
 
 /**
