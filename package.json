@@ -61,6 +61,7 @@
   },
   "bundledDependencies": [
     "body-parser",
+    "papaparse",
     "@linkurious/rest-client"
   ]
 }
