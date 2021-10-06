@@ -191,16 +191,21 @@ export class GraphItemService {
       } catch (e) {
         log('Batch has failed', e);
         errors.add(e, batch.rowNumbers);
+      } finally {
+        this.updateImportProgress(totalRecords, i);
       }
-      this.updateImportProgress(totalRecords, i);
     }
 
-    // LKE-4201 Remove the CSV_PLUGIN category
-    await GraphItemService.runCypherQuery(
-      rc,
-      'MATCH(c:CSV_PLUGIN) DETACH DELETE c RETURN 0',
-      params.sourceKey
-    );
+    try {
+      // LKE-4201 Remove the CSV_PLUGIN category
+      await GraphItemService.runCypherQuery(
+          rc,
+          'MATCH(c:CSV_PLUGIN) DETACH DELETE c RETURN 0',
+          params.sourceKey
+      );
+    } catch (e) {
+      log('Failed to clean up temporary CSV_PLUGIN node', e);
+    }
 
     this.finishImport(errors, totalRecords);
   }
