@@ -60,7 +60,7 @@ In order to do so:
 6. Click on `SAVE`
 
 > If you prefer to access the plugin directly via URL, you need to retrieve the sourceKey and replace it within the link:
-> https://\<your-linkurious-instance\>/plugins/importer/index.html?sourceKey=\<sourceKey\>
+> https://{{baseurl}}/plugins/csv-importer/index.html?sourceKey={{sourceKey}}
 
 ## Use the plugin
 
