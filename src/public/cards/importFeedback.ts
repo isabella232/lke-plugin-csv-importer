@@ -28,7 +28,7 @@ export class CSVImportFeedback {
     this.importStatus.classList.remove('success', 'failed', 'incomplete');
     if ('globalError' in feedback) {
       this.fillImportFeedback(
-        'Nothing has been imported',
+        'Nothing has been imported.',
         'Import failed',
         'failed',
         feedback.globalError
@@ -39,7 +39,7 @@ export class CSVImportFeedback {
     let item = isEdge ? 'edge' : 'node';
     let errors = '';
     Object.entries(feedback.error || {}).forEach(([key, value], index) => {
-      const jumpLine = Object.entries(feedback.error || {}).length === index + 1 ? '.' : ' \n\n';
+      const jumpLine = Object.entries(feedback.error || {}).length === index + 1 ? '' : ' \n\n';
       errors += key + '\n' + `${value.length === 1 && !value[0].includes('~') ? 'Row' : 'Rows'}: ${value.join(', ')}${jumpLine}`;
     });
     switch (total) {
@@ -47,7 +47,7 @@ export class CSVImportFeedback {
         item += total > 1 ? 's' : '';
         const article = total > 1 ? 'them' : 'it';
         this.fillImportFeedback(
-          `All ${total} ${item} have been imported. Please index the data-source to make ${article} searchable`,
+          `All ${total} ${item} have been imported. Please index the data-source to make ${article} searchable.`,
           'Import successful',
           'success'
         )
@@ -55,7 +55,7 @@ export class CSVImportFeedback {
       }
       case feedback.failed: {
         this.fillImportFeedback(
-          'Nothing has been imported',
+          'Nothing has been imported.',
           'Import failed',
           'failed',
           errors
@@ -69,8 +69,8 @@ export class CSVImportFeedback {
         const successArticle = feedback.success > 1 ? 'them' : 'it';
         const successItem = item + (feedback.success > 1 ? 's' : '');
         this.fillImportFeedback(
-          `Only ${feedback.success}/${total} ${successItem} have been imported. Please index the data-source to make ${successArticle} searchable.<br><br>` +
-          `While ${feedback.failed}/${total} ${failedItem} have <i>not</i> been imported due to the following ${error}`,
+          `Only ${feedback.success}/${total} ${successItem} have been imported. Please index the data-source to make ${successArticle} searchable.` +
+          `<div style="margin-top: 12px">While ${feedback.failed}/${total} ${failedItem} have <b>not</b> been imported due to the following ${error}:</div>`,
           'Import incomplete',
           'incomplete',
           errors,
@@ -84,7 +84,7 @@ export class CSVImportFeedback {
   }
 
   fillImportFeedback(feedback: string, status: string, _class: string, errors?: string, errorHelp?: string) {
-    this.importFeedback.innerText = feedback;
+    this.importFeedback.innerHTML = feedback;
     this.importStatus.innerText = status;
     this.importStatus.classList.add(_class);
     if (errors) {
