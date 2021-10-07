@@ -71,7 +71,7 @@ In order to do so:
    **b. No headers provided**:
    Your CSV file starts with an empty line
 
-   **c. Header value is empty**:
+   **c. Header has an empty value**:
    One or more header values have no content
 
    **d. Missing values in records: 1, 4~7, 9, ...**:

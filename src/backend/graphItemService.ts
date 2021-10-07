@@ -109,7 +109,7 @@ export class GraphItemService {
   public updateImportProgress(total: number, processed: number): void {
     this.importState = {
       importing: true,
-      progress: Math.floor(processed / (total + 1))
+      progress: Math.floor(processed * 100 / (total + 1))
     };
   }
 

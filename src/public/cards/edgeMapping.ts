@@ -62,8 +62,6 @@ export class CSVEdgeMapping {
       return this.importListener()
     } catch (error) {
       throw new Error("Import has failed");
-    } finally {
-      utils.stopWaiting();
     }
   }
 
@@ -73,6 +71,7 @@ export class CSVEdgeMapping {
         const response = await utils.makeRequest("POST", "api/importStatus", {});
         const parsedResponse: ImportState = JSON.parse(response.response);
         if (!parsedResponse.importing) {
+          utils.stopWaiting();
           resolve(parsedResponse.lastImport!)
         } else {
           utils.updateProgress(parsedResponse.progress);
