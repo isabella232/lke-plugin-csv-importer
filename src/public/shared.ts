@@ -35,7 +35,7 @@ export class CSVUtils {
     }
 
     // Ex: name,,surname
-    if (headers.some((h) => h.length === 0)) {
+    if (headers.some((h) => h === 'null')) {
       return {error: 'Header value is empty'};
     }
 
