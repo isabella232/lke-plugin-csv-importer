@@ -98,10 +98,13 @@ export class CSVUploader {
             if ('error' in parsedCSV) {
               this.fileError.innerHTML = parsedCSV.error;
               this.showError();
+              // Empty the value to allow uploading the same file in case of error
+              this.fileInput.value = '';
               reject(parsedCSV.error);
               return;
             }
-
+            // Empty the value to allow uploading the same file in case of error
+            this.fileInput.value = '';
             resolve({
               sourceKey: sourceKey,
               headers: parsedCSV.headers,
