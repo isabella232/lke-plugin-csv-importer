@@ -54,11 +54,11 @@ export class CSVUtils {
     for (let i = 0; i < parseResult.data.length; i++) {
       const row = parseResult.data[i];
       if (row.length < expectedNumberOfValues) {
-        missingValues.push(i);
+        missingValues.push(i + 1);
         continue;
       }
       if (row.length > expectedNumberOfValues) {
-        tooManyValues.push(i);
+        tooManyValues.push(i + 1);
       }
       // Cast "123,345" to 123.345
       parseResult.data[i] = row.map((value) => {
@@ -70,13 +70,13 @@ export class CSVUtils {
     }
     let error = '';
     if (missingValues.length > 0) {
-      error = `Missing values in records: ${missingValues.join(', ')}`;
+      error = `Missing values in records in line/s: ${missingValues.join(', ')}`;
     }
     if (tooManyValues.length > 0) {
       if (error.length >= 0) {
         error += '<br>';
       }
-      error += `Too many values in records: ${tooManyValues.join(', ')}`;
+      error += `Too many values in records in line/s: ${tooManyValues.join(', ')}`;
     }
     if (error.length > 0) {
       return {error: error};

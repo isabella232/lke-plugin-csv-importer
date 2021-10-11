@@ -13,7 +13,7 @@ export function log(...messages: unknown[]): void {
 export enum RowErrorMessage {
   SOURCE_TARGET_NOT_FOUND = 'Source or target node not found',
   DATA_SOURCE_UNAVAILABLE = 'Data-source is not available',
-  UNAUTHORIZED = 'You are not logged in',
+  UNAUTHORIZED = 'Unauthorized access to the data-source',
   UNEXPECTED = 'Unexpected error, check the logs'
 }
 
@@ -78,7 +78,7 @@ export class GroupedErrors extends Map<RowErrorMessage, number[]> {
       return RowErrorMessage.DATA_SOURCE_UNAVAILABLE;
     }
     // @ts-ignore
-    if (error.body?.key === LkErrorKey.UNAUTHORIZED) {
+    if (error.body?.key === LkErrorKey.UNAUTHORIZED || error.body?.key === LkErrorKey.FORBIDDEN) {
       return RowErrorMessage.UNAUTHORIZED;
     }
 

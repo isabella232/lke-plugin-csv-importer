@@ -74,10 +74,10 @@ In order to do so:
    **c. Header has an empty value**:
    One or more header values have no content
 
-   **d. Missing values in records: 1, 4~7, 9, ...**:
+   **d. Missing values in records in line/s: 1, 4, 9, ...**:
    Some records have less columns than the headers
 
-   **e. Too many values in records: 1, 4~7, 9, ...**:
+   **e. Too many values in records in line/s: 1, 4, 9, ...**:
    Some records have more columns than the headers
     
     
@@ -108,8 +108,7 @@ After the import, you will get one of the following results:
 
    **a. Source or target node not found**
 
-   **b. Data-source is not available**:
-      Data source is not available or it is set to read only.
+   **b. Data-source is not available**
    
    **c. Unauthorized access to the data-source**
 
