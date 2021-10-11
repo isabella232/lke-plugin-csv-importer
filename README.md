@@ -74,10 +74,10 @@ In order to do so:
    **c. Header has an empty value**:
    One or more header values have no content
 
-   **d. Missing values in records in line/s: 1, 4, 9, ...**:
+   **d. Missing values: Record/s 1, 4, 9, ...**:
    Some records have less columns than the headers
 
-   **e. Too many values in records in line/s: 1, 4, 9, ...**:
+   **e. Too many values: Record/s 1, 4, 9, ...**:
    Some records have more columns than the headers
     
     

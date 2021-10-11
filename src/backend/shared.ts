@@ -70,13 +70,13 @@ export class CSVUtils {
     }
     let error = '';
     if (missingValues.length > 0) {
-      error = `Missing values in records in line/s: ${missingValues.join(', ')}`;
+      error = `Missing values: Record/s ${missingValues.join(', ')}`;
     }
     if (tooManyValues.length > 0) {
       if (error.length >= 0) {
         error += '<br>';
       }
-      error += `Too many values in records in line/s: ${tooManyValues.join(', ')}`;
+      error += `Too many values: Record/s ${tooManyValues.join(', ')}`;
     }
     if (error.length > 0) {
       return {error: error};
