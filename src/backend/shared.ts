@@ -73,7 +73,7 @@ export class CSVUtils {
       error = `Missing values: Record/s ${missingValues.join(', ')}`;
     }
     if (tooManyValues.length > 0) {
-      if (error.length >= 0) {
+      if (error.length > 0) {
         error += '<br>';
       }
       error += `Too many values: Record/s ${tooManyValues.join(', ')}`;

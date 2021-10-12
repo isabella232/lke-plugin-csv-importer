@@ -219,8 +219,7 @@ export class GraphItemService {
     for (let i = 0; i < parsedCSV.records.length; i++) {
       const properties = parsedCSV.records[i];
       const UID = properties[0];
-      // The items to import are in rows 2, 3, etc (the header is row 1)
-      const rowNumber = i + 2;
+      const rowNumber = i + 1;
 
       // Assign node to a batch
       if (
@@ -266,8 +265,7 @@ export class GraphItemService {
     // Parse row by row
     for (let i = 0; i < parsedCSV.records.length; i++) {
       let [from, to, ...propertyValues] = parsedCSV.records[i];
-      // The items to import are in rows 2, 3, etc (the header is row 1)
-      const rowNumber = i + 2;
+      const rowNumber = i + 1;
 
       const sourceID = GraphItemService.nodeIDS.get(sourceType + from);
       const targetID = GraphItemService.nodeIDS.get(destinationType + to);
