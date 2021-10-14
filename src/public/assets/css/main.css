@@ -46,7 +46,7 @@ a {
   margin-top: 32px;
 }
 
-#showExampleButton, #showEdgeExampleButton {
+#showEdgeExampleButton {
   margin-left: 2rem;
 }
 
@@ -359,6 +359,7 @@ input[type='checkbox'] {
   border-radius: 8px;
   border: 1px solid #D9D9D9;
   padding: 16px;
+  margin-top: 8px;
 }
 
 .import-info {
@@ -433,14 +434,13 @@ input[type='checkbox'] {
 
 .importFeedback {
   font-size: 1.3rem;
-  margin-bottom: 32px;
   margin-top: 16px;
 }
 
 .buttonSpaceBetween {
   display: flex;
   justify-content: space-between;
-  padding-top: 16px;
+  padding-top: 32px;
 }
 
 .infoPopup {

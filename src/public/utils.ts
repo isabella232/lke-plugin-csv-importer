@@ -20,7 +20,9 @@ function startWaiting() {
 
 function updateProgress(progress: number | undefined) {
   const info = document.getElementById("importInfo");
-  info!.innerHTML = `Currently importing data ${progress}%`
+  if (info) {
+    info!.innerHTML = `Currently importing data ${progress}%`
+  }
 }
 
 /**
@@ -35,10 +37,18 @@ function stopWaiting() {
 }
 
 /**
- * Go back to linkurious home page
+ * Go back to linkurious data-source settings page
  */
-function goToLinkurious() {
-  window.location = (window.location.origin as unknown) as Location;
+function goToLinkurious(sourceKey: string) {
+  let basePath;
+  const match = window.location.pathname.match(/([^/]+)\/plugins\/.+/);
+  if (match === null) {
+    basePath = '';
+  } else {
+    basePath = '/' + match[1];
+  }
+  const location = window.location.origin + basePath + `/admin/data?key=${sourceKey}`;
+  window.location = (location as unknown) as Location;
 }
 
 /**

@@ -11,16 +11,13 @@ export function log(...messages: unknown[]): void {
 }
 
 export enum RowErrorMessage {
-  TOO_MANY_OR_MISSING_PROPERTIES = 'There are not as many properties as headers',
   SOURCE_TARGET_NOT_FOUND = 'Source or target node not found',
   DATA_SOURCE_UNAVAILABLE = 'Data-source is not available',
-  UNAUTHORIZED = 'You are not logged in',
+  UNAUTHORIZED = 'Unauthorized access to the data-source',
   UNEXPECTED = 'Unexpected error, check the logs'
 }
 
 export class GroupedErrors extends Map<RowErrorMessage, number[]> {
-  public static validKeys = new Set(Object.values(RowErrorMessage));
-
   constructor(entries?: [RowErrorMessage, number[]][]) {
     super();
     entries?.forEach(([error, rows]) => rows.forEach((row) => this.add(error, row)));
@@ -72,8 +69,8 @@ export class GroupedErrors extends Map<RowErrorMessage, number[]> {
   }
 
   private static simplifyErrorMessage(error: unknown): RowErrorMessage {
-    if (GroupedErrors.validKeys.has(error as RowErrorMessage)) {
-      return error as RowErrorMessage;
+    if (error === RowErrorMessage.SOURCE_TARGET_NOT_FOUND) {
+      return error;
     }
 
     // @ts-ignore
@@ -81,7 +78,7 @@ export class GroupedErrors extends Map<RowErrorMessage, number[]> {
       return RowErrorMessage.DATA_SOURCE_UNAVAILABLE;
     }
     // @ts-ignore
-    if (error.body?.key === LkErrorKey.UNAUTHORIZED) {
+    if (error.body?.key === LkErrorKey.UNAUTHORIZED || error.body?.key === LkErrorKey.FORBIDDEN) {
       return RowErrorMessage.UNAUTHORIZED;
     }
 
@@ -89,10 +86,12 @@ export class GroupedErrors extends Map<RowErrorMessage, number[]> {
   }
 }
 
-export function respond(asyncHandler: (req: Request) => Promise<{[k: string]: unknown} | void>) {
+export function respond(
+  handler: (req: Request) => Promise<{[k: string]: unknown} | void>
+) {
   return async (req: Request, res: _Response): Promise<void> => {
     try {
-      const body = await asyncHandler(req);
+      const body = await handler(req);
       if (body === undefined) {
         res.status(204);
         res.send();

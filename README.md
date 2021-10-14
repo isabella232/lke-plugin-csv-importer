@@ -28,8 +28,8 @@ Two sample CSV files, for nodes and edges, are available [here](https://github.c
 
 > Make sure to have write access to the folder of Linkurious Enterprise as well as a Linkurious admin account.
 
-1. Download the `csv-importer.lke` plugin available [here](https://github.com/Linkurious/lke-plugin-csv-importer/releases/tag/v1.0.0).
-2. Copy `csv-importer.lke` file to the following path `<linkurious>/data/plugins`
+1. Download the `lke-plugin-csv-importer-{version number}.lke` plugin available [here](https://github.com/Linkurious/lke-plugin-csv-importer/releases).
+2. Copy `lke-plugin-csv-importer-{version number}.lke` file to the following path `<linkurious>/data/plugins`
 3. From the Linkurious Enterprise dashboard, go to `Admin` -> `Global configuration`
 4. Scroll to the `Plugin settings` field
 5. On the `Plugin settings` section, modify the content as follows:
@@ -60,11 +60,27 @@ In order to do so:
 6. Click on `SAVE`
 
 > If you prefer to access the plugin directly via URL, you need to retrieve the sourceKey and replace it within the link:
-> https://<your-linkurious-instance>/plugins/importer/index.html?sourceKey=<sourceKey>
+> https://{{baseurl}}/plugins/csv-importer/index.html?sourceKey={{sourceKey}}
 
 ## Use the plugin
 
-1. Choose your CSV file and click the Upload button
+1. Choose your CSV file and click the Upload button. You can get one of the following errors:
+    
+   **a. No source key defined in URL**
+
+   **b. No headers provided**:
+   Your CSV file starts with an empty line
+
+   **c. Header has an empty value**:
+   One or more header values have no content
+
+   **d. Missing values: Record/s 1, 4, 9, ...**:
+   Some records have less columns than the headers
+
+   **e. Too many values: Record/s 1, 4, 9, ...**:
+   Some records have more columns than the headers
+    
+    
 2. Specify if you are uploading nodes or edges
 
 ![](readme_assets/choosetype.png)
@@ -90,26 +106,14 @@ After the import, you will get one of the following results:
 
 3. **Incomplete**: Some nodes/edges failed to be imported due to one of the following reasons:
 
-   **a. Schema non-compliant data**:
-      The schema type has phone as number, but in the csv the value of phone is a string. Same for date or booleans or other incompatible types
+   **a. Source or target node not found**
 
-   **b. Unexpected properties (in strict schema)**:
-      If the schema type has name and phone, but in your csv you have the headers name, phone, email, then it will fail for email
+   **b. Data-source is not available**
+   
+   **c. Unauthorized access to the data-source**
 
-   **c. Missing required properties**:
-      If the schema type has phone as required, but your csv has only name
-
-   **d. Too many or missing header values**:
-      Your header has 3 property names, but some rows have less than 3 or more than 3 comma-separated values
-
-   **e. Source or target node does not exist**
-
-   **f. Data-source is not available (including read-only)**
-
-   **g. Unauthorized access to the data-source**
-
-   **h. Error unknown**:
-      Default message if error is not known
+   **d. Unexpected error, check the logs**:
+      Default message if error is unknown. You can download the logs following [these steps] (https://doc.linkurio.us/admin-manual/latest/support/)
 
 ## Limitations
 
