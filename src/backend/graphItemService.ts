@@ -31,7 +31,7 @@ export class GraphItemService {
    *    CREATE (b:BOOTSTRAP {result: ids}) RETURN b
    */
   static buildNodesQuery(category: string, keys: string[], values: unknown[]): string {
-    const node = `(n:\`${category}\` {` + keys.map((k, i) => `${k}: line[${i}]`).join(', ') + '})';
+    const node = `(n:\`${category}\` {` + keys.map((k, i) => `\`${k}\`: line[${i}]`).join(', ') + '})';
 
     return (
       `WITH ${JSON.stringify(values)} AS batch ` +
@@ -57,7 +57,7 @@ export class GraphItemService {
    */
   static buildEdgesQuery(type: string, keys: string[], values: unknown[][]): string {
     // First 2 properties are reserved from the extremities
-    const props = '{' + keys.map((k, i) => `${k}: line[${i + 2}]`).join(', ') + '}';
+    const props = '{' + keys.map((k, i) => `\`${k}\`: line[${i + 2}]`).join(', ') + '}';
 
     return (
       `WITH ${JSON.stringify(values)} AS batch ` +
