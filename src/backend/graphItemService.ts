@@ -20,6 +20,15 @@ export class GraphItemService {
     importing: false
   };
 
+
+  /**
+   * Names in Cypher are wrapped in back-ticks ("`").
+   * Escape is done with a double back-tick.
+   */
+  static encodeName(v: string): string {
+    return '`' + v.split('`').join('``') + '`';
+  }
+
   /**
    * Returns a query that creates nodes.
    *
@@ -31,7 +40,7 @@ export class GraphItemService {
    *    CREATE (b:BOOTSTRAP {result: ids}) RETURN b
    */
   static buildNodesQuery(category: string, keys: string[], values: unknown[]): string {
-    const node = `(n:\`${category}\` {` + keys.map((k, i) => `${k}: line[${i}]`).join(', ') + '})';
+    const node = `(n:${GraphItemService.encodeName(category)} {` + keys.map((k, i) => `${GraphItemService.encodeName(k)}: line[${i}]`).join(', ') + '})';
 
     return (
       `WITH ${JSON.stringify(values)} AS batch ` +
@@ -57,14 +66,14 @@ export class GraphItemService {
    */
   static buildEdgesQuery(type: string, keys: string[], values: unknown[][]): string {
     // First 2 properties are reserved from the extremities
-    const props = '{' + keys.map((k, i) => `${k}: line[${i + 2}]`).join(', ') + '}';
+    const props = '{' + keys.map((k, i) => `${GraphItemService.encodeName(k)}: line[${i + 2}]`).join(', ') + '}';
 
     return (
       `WITH ${JSON.stringify(values)} AS batch ` +
       'UNWIND batch AS line ' +
       'MATCH (from) WHERE id(from) = line[0] ' +
       'MATCH (to) WHERE id(to) = line[1] ' +
-      `CREATE (from)-[:\`${type}\` ${props}]->(to)` +
+      `CREATE (from)-[:${GraphItemService.encodeName(type)} ${props}]->(to)` +
       // LKE requires a RETURN clause
       'RETURN 0'
     );
