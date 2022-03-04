@@ -64,6 +64,8 @@ In order to do so:
 
 ## Use the plugin
 
+> Make sure you are logged in as an Admin user, and the Linkurious Enterprise schema is not in the strict mode.
+
 1. Choose your CSV file and click the Upload button. You can get one of the following errors:
     
    **a. No source key defined in URL**
