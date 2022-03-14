@@ -1,4 +1,4 @@
-import {RestClient, RunQueryResponse} from '@linkurious/rest-client';
+import {LkErrorKey, RestClient, RunQueryResponse} from '@linkurious/rest-client';
 import {GroupedErrors, log, RowErrorMessage} from './utils';
 import {ImportEdgesParams, ImportState, ImportNodesParams} from '../@types/shared';
 import {CSVUtils, ParsedCSV} from './shared';
@@ -113,7 +113,12 @@ export class GraphItemService {
       sourceKey: sourceKey
     });
     if (!queryResponse.isSuccess()) {
-      throw Error(`Failed to execute cypher query. Error: ${queryResponse.body.key} ${queryResponse.body.message}`);
+      const cypherError = Error(`Failed to execute cypher query. Error: ${queryResponse.body.key} ${queryResponse.body.message}`);
+      log(cypherError.message + ` Query was: ${cypherQuery}`);
+      if (queryResponse.body.key === LkErrorKey.FORBIDDEN) {
+        throw Error(`Access error: please make sure strict schema is disabled and you are using an admin account.`);
+      }
+      throw cypherError;
     }
     return queryResponse.body;
   }
@@ -330,7 +335,7 @@ export class GraphItemService {
       // 2. As a custom group user, the category is not declared in the schema
       // 3. As a custom group user, the category is declared but not available (Admin intentionally marked the category as hidden)
       // 4. As any user, PKAR is enabled and the category is not accessible
-    const accessError = Error(`Access error, please switch to partial schema and use an admin account.`);
+    const accessError = Error(`Access error: please make sure strict schema is disabled and you are using an admin account.`);
     const response = await GraphItemService
         .runCypherQuery(rc, `CREATE (n:${this.REPORT_NODE_CATEGORY} {${this.REPORT_NODE_PROPERTY}: 1}) RETURN n`, sourceKey);
     if (response.nodes.length !== 1) {
