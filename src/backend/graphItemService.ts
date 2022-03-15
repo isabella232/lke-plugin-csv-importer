@@ -1,4 +1,4 @@
-import {RestClient, RunQueryResponse} from '@linkurious/rest-client';
+import {LkErrorKey, RestClient, RunQueryResponse} from '@linkurious/rest-client';
 import {GroupedErrors, log, RowErrorMessage} from './utils';
 import {ImportEdgesParams, ImportState, ImportNodesParams} from '../@types/shared';
 import {CSVUtils, ParsedCSV} from './shared';
@@ -19,6 +19,9 @@ export class GraphItemService {
   public importState: ImportState = {
     importing: false
   };
+
+  private static readonly REPORT_NODE_CATEGORY = 'CSV_PLUGIN';
+  private static readonly REPORT_NODE_PROPERTY = 'result';
 
 
   /**
@@ -48,7 +51,7 @@ export class GraphItemService {
       `CREATE ${node} ` +
       // We return the ids collection as a string because LKE does not support array values via bolt
       `WITH reduce(acc = '', id IN collect(id(n)) | acc + ' ' + id) AS ids ` +
-      'CREATE (c:CSV_PLUGIN {result: ids}) ' +
+      `CREATE (c:${GraphItemService.REPORT_NODE_CATEGORY} {${this.REPORT_NODE_PROPERTY}: ids}) ` +
       'RETURN c'
     );
   }
@@ -86,7 +89,7 @@ export class GraphItemService {
   ): void {
     // LKE can only return graph items,
     // so for queries to return scalar values they need to put the result inside (n: {result: <here>}) and return n
-    const result = runQueryResponse.nodes[0].data.properties.result;
+    const result = runQueryResponse.nodes[0].data.properties[this.REPORT_NODE_PROPERTY];
     const graphIDs =
       typeof result === 'object' && 'original' in result
         ? (result.original as string)
@@ -110,7 +113,12 @@ export class GraphItemService {
       sourceKey: sourceKey
     });
     if (!queryResponse.isSuccess()) {
-      throw queryResponse;
+      const cypherError = Error(`Failed to execute cypher query. Error: ${queryResponse.body.key} ${queryResponse.body.message}`);
+      log(cypherError.message + ` Query was: ${cypherQuery}`);
+      if (queryResponse.body.key === LkErrorKey.FORBIDDEN) {
+        throw Error(`Access error: please make sure strict schema is disabled and you are using an admin account.`);
+      }
+      throw cypherError;
     }
     return queryResponse.body;
   }
@@ -162,6 +170,13 @@ export class GraphItemService {
       return;
     }
 
+    try {
+      await GraphItemService.assertCanReadReportNode(rc, params.sourceKey);
+    } catch (error) {
+      this.finishImport(error.message);
+      return;
+    }
+
     const isEdge = 'sourceType' in params;
     const totalRecords = parsedCSV.records.length;
     let propertyKeys: string[];
@@ -209,11 +224,11 @@ export class GraphItemService {
       // LKE-4201 Remove the CSV_PLUGIN category
       await GraphItemService.runCypherQuery(
           rc,
-          'MATCH(c:CSV_PLUGIN) DETACH DELETE c RETURN 0',
+          `MATCH(c:${GraphItemService.REPORT_NODE_CATEGORY}) DETACH DELETE c RETURN 0`,
           params.sourceKey
       );
     } catch (e) {
-      log('Failed to clean up temporary CSV_PLUGIN node', e);
+      log(`Failed to clean up temporary ${GraphItemService.REPORT_NODE_CATEGORY} node`, e);
     }
 
     this.finishImport(errors, totalRecords);
@@ -306,5 +321,31 @@ export class GraphItemService {
       batchedRows: batchedRows,
       badRows: [[RowErrorMessage.SOURCE_TARGET_NOT_FOUND, noExtremitiesRows]]
     };
+  }
+
+  /**
+   * Ensure that the current user has the correct privileges to import nodes and create a report of the nodes imported.
+   *
+   * @param sourceKey
+   * @param rc
+   */
+  private static async assertCanReadReportNode(rc: RestClient, sourceKey: string): Promise<void> {
+    // The CSV_PLUGIN node will not be returned by LKE if:
+      // 1. As an admin, you are in strict schema and the category is not declared
+      // 2. As a custom group user, the category is not declared in the schema
+      // 3. As a custom group user, the category is declared but not available (Admin intentionally marked the category as hidden)
+      // 4. As any user, PKAR is enabled and the category is not accessible
+    const accessError = Error(`Access error: please make sure strict schema is disabled and you are using an admin account.`);
+    const response = await GraphItemService
+        .runCypherQuery(rc, `CREATE (n:${this.REPORT_NODE_CATEGORY} {${this.REPORT_NODE_PROPERTY}: 1}) RETURN n`, sourceKey);
+    if (response.nodes.length !== 1) {
+      log(`Cannot create nodes with category ${this.REPORT_NODE_CATEGORY}`);
+      throw accessError;
+    } else if (!(this.REPORT_NODE_PROPERTY in response.nodes[0].data.properties)) {
+      log(`Cannot read property ${this.REPORT_NODE_CATEGORY}.${this.REPORT_NODE_PROPERTY}`);
+      throw accessError;
+    } else {
+      await GraphItemService.runCypherQuery(rc, `MATCH (n) WHERE ID(n) = ${response.nodes[0].id} DETACH DELETE n RETURN null`, sourceKey);
+    }
   }
 }
